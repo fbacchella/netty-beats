@@ -36,7 +36,7 @@ public class MessageTest {
         Message messageOlder = new Message(1, map);
         Message messageNewer = new Message(2, map);
 
-        assertThat(messageNewer, is(greaterThan(messageOlder)));
+        assertThat(messageNewer.getSequence(), is(greaterThan(messageOlder.getSequence())));
     }
 
     @Test

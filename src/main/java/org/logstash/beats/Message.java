@@ -12,11 +12,7 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
 
-/**
- *
- * Note: this class has a natural ordering that is inconsistent with equals.
- */
-public class Message implements Comparable<Message> {
+public class Message {
 
     private final int sequence;
     private String identityStream;
@@ -71,11 +67,6 @@ public class Message implements Comparable<Message> {
      */
     public Map<String, Object> getData() {
         return data;
-    }
-
-    @Override
-    public int compareTo(Message o) {
-        return Integer.compare(getSequence(), o.getSequence());
     }
 
     public Batch getBatch() {
