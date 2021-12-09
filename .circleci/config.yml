@@ -10,7 +10,7 @@ jobs:
             - run: mkdir -p /home/circleci/.sonar/cache /home/circleci/.m2/repository
             - run:
                 # A bug in dependency:go-offline, see https://issues.apache.org/jira/browse/MDEP-688
-                command: "mvn -B dependency:resolve dependency:resolve-plugins sonar:help jacoco:help surefire:help -Psonar,versions -s .circleci/settings.xml"
+                command: "mvn -B dependency:resolve dependency:resolve-plugins sonar:help jacoco:help surefire:help -Psonar,versions,gpgsign -s .circleci/settings.xml"
                 environment:
                     JAVA_HOME: /usr/local/openjdk-17
                     MAVEN_OPTS: "-Xmx1024m"
@@ -138,6 +138,7 @@ jobs:
                     mv -n /tmp/ws/home/circleci/.sonar /home/circleci/
                     mv -n /tmp/ws/home/circleci/project/* /home/circleci/project/
                     mv -n /tmp/ws/home/circleci/project/.??* /home/circleci/project/
+                    echo $SECRING_GPG_ASC_BASE64 | base64 --decode | gpg --batch --no-tty --import --yes
             - run:
                 command: |
                     # If no symbolic name, it's a PR, will not publish results
@@ -147,7 +148,7 @@ jobs:
                         PUBLISH="install"
                     fi
                     echo "publishing jobs: $PUBLISH"
-                    mvn -B $PUBLISH -Pskip -Dmaven.test.skip=true -s .circleci/settings.xml
+                    mvn -B $PUBLISH -Pskip,gpgsign -Dmaven.test.skip=true -s .circleci/settings.xml -Dgpg.keyname=8C272041
                 environment:
                     JAVA_HOME: /usr/local/openjdk-17
                     MAVEN_OPTS: "-Xmx2048m"
@@ -189,9 +190,11 @@ workflows:
           requires:
               - build
       - testsj17:
+          context: "Security variables"
           requires:
               - build
       - publish:
+          context: "Security variables"
           requires:
               - testsj8
               - testsj11
