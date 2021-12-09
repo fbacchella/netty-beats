@@ -11,10 +11,12 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <jdk.compile.home>${jdk.8.home}</jdk.compile.home>
-        <bootclasspath>${jdk.compile.home}/jre/lib/rt.jar</bootclasspath>
         <log4j>2.14.1</log4j>
         <surefire.version>3.0.0-M5</surefire.version>
+        <dependency.locations.enabled>false</dependency.locations.enabled>
+        <!-- Indirection needed to keep optionnal jacoco settings and external argument lines-->
+        <arg.line></arg.line>
+        <argLine>${arg.line}</argLine>
     </properties>
 
     <dependencies>
@@ -372,15 +374,14 @@
     </developers>
 
     <distributionManagement>
-        <repository>
-            <id>bintray-release</id>
-            <url>https://api.bintray.com/maven/fbacchella/maven/netty-beats</url>
-        </repository>
         <snapshotRepository>
-            <id>sonatype-nexus-snapshots</id>
-            <name>Sonatype Nexus Snapshots</name>
-            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
     </distributionManagement>
 
     <ciManagement>
