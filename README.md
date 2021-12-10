@@ -1,6 +1,6 @@
 # Netty Beats codec
 
-[![Travis Build Status](https://travis-ci.org/fbacchella/netty-beats.svg)](https://travis-ci.org/fbacchella/netty-beats)
+[![CircleCI](https://circleci.com/gh/fbacchella/netty-beats/tree/netty_only.svg?style=svg)](https://circleci.com/gh/fbacchella/netty-beats/tree/netty_only)
 
 This is a [netty](https://netty.io)'s handler for Elastic's (beats)[https://www.elastic.co/fr/products/beats]. It can only received message, not send them.
 It's a fork from the [logstash's plugin](https://github.com/logstash-plugins/logstash-input-beats) that kept only the netty parts.
