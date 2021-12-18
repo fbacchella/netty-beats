@@ -11,7 +11,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <log4j>2.15.0</log4j>
+        <log4j>2.17.0</log4j>
         <surefire.version>3.0.0-M5</surefire.version>
         <dependency.locations.enabled>false</dependency.locations.enabled>
         <!-- Indirection needed to keep optionnal jacoco settings and external argument lines-->
