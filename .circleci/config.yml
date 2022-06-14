@@ -66,6 +66,8 @@ jobs:
                     MAVEN_OPTS: "-Xmx512m"
             - store_test_results:
                 path: target/surefire-reports
+            - store_artifacts:
+                  path: /home/circleci/.m2/repository/fr/loghub/netty-beats
             - persist_to_workspace:
                 root: /
                 paths:
