@@ -137,7 +137,8 @@ public class Server {
             try {
                 logger.debug("Shutting down existing worker group before starting");
                 workGroup.shutdownGracefully(shutdownDelay.toMillis(), shutdownDelay.toMillis() * 2, TimeUnit.MILLISECONDS).sync();
-            } catch (Exception e) {
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 logger.error("Could not shut down worker group before starting", e);
                 throw new IllegalStateException("Could not shut down worker group before starting", e);
             }
