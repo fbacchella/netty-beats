@@ -26,7 +26,7 @@ public interface IMessageListener {
     void onNewConnection(ChannelHandlerContext ctx);
 
     /**
-     * Triggered when a connection is close on the remote end and we need to flush buffered
+     * Triggered when a connection is close on the remote end, and we need to flush buffered
      * events to the queue.
      *
      * @param ctx context
@@ -43,7 +43,7 @@ public interface IMessageListener {
     void onException(ChannelHandlerContext ctx, Throwable cause);
 
     /**
-     * Called when a error occur in the channel initialize, usually ssl handshake error.
+     * Called when an error occur in the channel initialize, usually ssl handshake error.
      *
      * @param ctx context
      * @param cause cause

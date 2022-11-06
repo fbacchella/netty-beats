@@ -16,7 +16,7 @@ public class CompressedBatchEncoder extends BatchEncoder {
         ByteBuf outBuffer = ctx.alloc().buffer();
         try {
             try (ByteBufOutputStream output = new ByteBufOutputStream(outBuffer);
-                 DeflaterOutputStream outputDeflater = new DeflaterOutputStream(output, new Deflater());) {
+                 DeflaterOutputStream outputDeflater = new DeflaterOutputStream(output, new Deflater())) {
                 byte[] chunk = new byte[payload.readableBytes()];
                 payload.readBytes(chunk);
                 outputDeflater.write(chunk);

@@ -39,7 +39,7 @@ public class BeatsHandler extends SimpleChannelInboundHandler<Batch> {
 
 
     @Override
-    public void channelRead0(ChannelHandlerContext ctx, Batch batch) throws Exception {
+    public void channelRead0(ChannelHandlerContext ctx, Batch batch) {
         logger.debug("{}", () -> format("Received a new payload"));
         try {
             for (Message message : batch) {
@@ -71,7 +71,7 @@ public class BeatsHandler extends SimpleChannelInboundHandler<Batch> {
      * overlap Filebeat transmission; we were recommending multiline at the source in v5 and in v6 we enforce it.
      */
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         try {
             if (!(cause instanceof SSLHandshakeException)) {
                 messageListener.onException(ctx, cause);

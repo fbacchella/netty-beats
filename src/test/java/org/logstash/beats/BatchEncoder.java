@@ -71,17 +71,13 @@ public class BatchEncoder extends MessageToByteEncoder<Batch> {
             byte[] key = ((String) e.getKey()).getBytes();
             byte[] value = ((String) e.getValue()).getBytes();
 
-            logger.debug("New entry: key: " + key + ", value: " + value);
+            logger.debug("New entry: key: " + e.getKey() + ", value: " + e.getValue());
 
             payload.writeInt(key.length);
             payload.writeBytes(key);
             payload.writeInt(value.length);
             payload.writeBytes(value);
         }
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
     }
 
 }

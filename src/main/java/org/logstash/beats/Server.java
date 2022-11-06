@@ -1,12 +1,9 @@
 package org.logstash.beats;
 
-import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -153,7 +150,7 @@ public class Server {
 
             ServerBootstrap server = new ServerBootstrap();
             server.group(workGroup)
-            // Since the protocol doesn't support yet a remote close from the server and we don't want to have 'unclosed' socket lying around we have to use `SO_LINGER` to force the close of the socket.
+            // Since the protocol doesn't support yet a remote close from the server, and we don't want to have 'unclosed' socket lying around we have to use `SO_LINGER` to force the close of the socket.
             .childOption(ChannelOption.SO_LINGER, 0)
             .childHandler(beatsInitializer);
 
@@ -229,7 +226,7 @@ public class Server {
         }
 
         @Override
-        public void initChannel(SocketChannel socket) throws IOException, NoSuchAlgorithmException, CertificateException {
+        public void initChannel(SocketChannel socket) {
             ChannelPipeline pipeline = socket.pipeline();
 
             if (localTlsContext != null) {

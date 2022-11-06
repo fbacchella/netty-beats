@@ -11,7 +11,7 @@ import java.util.List;
 public class V1Batch implements Batch {
 
     private int batchSize = 0;
-    private List<Message> messages = new ArrayList<>();
+    private final List<Message> messages = new ArrayList<>();
     private int highestSequence = -1;
 
     @Override

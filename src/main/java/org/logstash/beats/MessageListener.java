@@ -34,7 +34,7 @@ public class MessageListener implements IMessageListener {
     }
 
     /**
-     * Triggered when a connection is close on the remote end and we need to flush buffered
+     * Triggered when a connection is close on the remote end, and we need to flush buffered
      * events to the queue.
      *
      * @param ctx
@@ -45,7 +45,7 @@ public class MessageListener implements IMessageListener {
 
     /**
      * Called went something bad occur in the pipeline, allow to clear buffered codec went
-     * somethign goes wrong.
+     * something goes wrong.
      *
      * @param ctx
      * @param cause
@@ -55,7 +55,7 @@ public class MessageListener implements IMessageListener {
     }
 
     /**
-     * Called when a error occur in the channel initialize, usually ssl handshake error.
+     * Called when an error occur in the channel initialize, usually ssl handshake error.
      *
      * @param ctx
      * @param cause

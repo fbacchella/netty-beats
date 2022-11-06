@@ -27,7 +27,7 @@ public interface Batch extends Iterable<Message>, Closeable {
 
     /**
      * Returns the highest sequence number of the batch.
-     * @return
+     * @return int
      */
     int getHighestSequence();
 
@@ -47,7 +47,7 @@ public interface Batch extends Iterable<Message>, Closeable {
      * Is the batch complete?
      * @return boolean
      */
-    public default boolean isComplete() {
+    default boolean isComplete() {
         return size() == getBatchSize();
     }
 
@@ -59,7 +59,7 @@ public interface Batch extends Iterable<Message>, Closeable {
     void release();
 
     @Override
-    public default void close() {
+    default void close() {
         release();
     }
 

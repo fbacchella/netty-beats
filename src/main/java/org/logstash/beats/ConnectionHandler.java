@@ -13,7 +13,7 @@ import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.AttributeKey;
 
 /**
- * Manages the connection state to the beats client.
+ * Manages the connection state to the beat's client.
  */
 public class ConnectionHandler extends ChannelDuplexHandler {
 
@@ -59,7 +59,7 @@ public class ConnectionHandler extends ChannelDuplexHandler {
      * </p>
      */
     @Override
-    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
         IdleStateEvent e;
         if (evt instanceof IdleStateEvent) {
             e = (IdleStateEvent) evt;
@@ -96,14 +96,14 @@ public class ConnectionHandler extends ChannelDuplexHandler {
     }
 
     /**
-     * Determine if this channel has finished processing it's payload. If it has not, send a TCP keep alive. Note - for this to work, the following must be true:
+     * Determine if this channel has finished processing its payload. If it has not, send a TCP keep alive. Note - for this to work, the following must be true:
      * <ul>
      *     <li>This Handler comes before the {@link BeatsHandler} in the channel's pipeline</li>
      *     <li>This Handler is associated to an {@link io.netty.channel.EventLoopGroup} that has guarantees that the associated {@link io.netty.channel.EventLoop} will never block.</li>
      *     <li>The {@link BeatsHandler} un-sets only after it has processed this channel's payload.</li>
      * </ul>
      * @param ctx the {@link ChannelHandlerContext} used to curry the flag.
-     * @return  Returns true if this channel/connection has NOT finished processing it's payload. False otherwise.
+     * @return  Returns true if this channel/connection has NOT finished processing its payload. False otherwise.
      */
     public boolean sendKeepAlive(ChannelHandlerContext ctx) {
         return  ctx.channel().hasAttr(CHANNEL_SEND_KEEP_ALIVE) && ctx.channel().attr(CHANNEL_SEND_KEEP_ALIVE).get().get();

@@ -148,9 +148,9 @@ public class BeatsParserTest {
     }
 
     @Test
-    public void testOversizedJson() {
+    public void testOversizeJson() {
         thrown.expectCause(isA(BeatsParser.InvalidFrameProtocolException.class));
-        thrown.expectMessage("Oversized payload: 54");
+        thrown.expectMessage("Oversize payload: 54");
 
         Batch decodedBatch = decodeBatch(byteBufBatch, 9);
         assertMessages(byteBufBatch, decodedBatch);
@@ -283,7 +283,7 @@ public class BeatsParserTest {
         Object o = channel.readOutbound();
         channel.writeInbound(o);
 
-        return (Batch) channel.readInbound();
+        return channel.readInbound();
     }
 
     private Batch decodeBatch(Batch batch) {
@@ -296,7 +296,7 @@ public class BeatsParserTest {
         Object o = channel.readOutbound();
         channel.writeInbound(o);
 
-        return (Batch) channel.readInbound();
+        return channel.readInbound();
     }
 
 }

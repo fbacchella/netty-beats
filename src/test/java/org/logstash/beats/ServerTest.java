@@ -273,7 +273,7 @@ public class ServerTest {
         .channel(NioSocketChannel.class)
         .handler(new ChannelInitializer<SocketChannel>() {
             @Override
-            public void initChannel(SocketChannel ch) throws Exception {
+            public void initChannel(SocketChannel ch) {
                 ChannelPipeline pipeline = ch.pipeline();
                 pipeline.addLast(new BatchEncoder());
             }
@@ -307,6 +307,7 @@ public class ServerTest {
         try {
             s.listen();
         } catch (InterruptedException e) {
+            // Ignored
         }
     }
 

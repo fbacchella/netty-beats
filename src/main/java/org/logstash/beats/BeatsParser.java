@@ -34,7 +34,7 @@ public class BeatsParser extends ByteToMessageDecoder {
         READ_JSON(-1),
         READ_DATA_FIELDS(-1);
 
-        private int length;
+        private final int length;
 
         States(int length) {
             this.length = length;
@@ -58,9 +58,9 @@ public class BeatsParser extends ByteToMessageDecoder {
     }
 
     /**
-     * Create a parser with a maximum payload size. If value is less that 0, it's not checked.
+     * Create a parser with a maximum payload size. If value is less than 0, it's not checked.
      * 
-     * @param maxPayloadSize
+     * @param maxPayloadSize the maximum payload size
      */
     public BeatsParser(int maxPayloadSize) {
         this.maxPayloadSize = maxPayloadSize >= 0 ? maxPayloadSize : Integer.MAX_VALUE;
@@ -69,9 +69,9 @@ public class BeatsParser extends ByteToMessageDecoder {
 
     /**
      * Create a parser with a maximum payload size and a non default JSON reader. Any value less or equal to 0 for the max payload disable check.
-     * 
-     * @param maxPayloadSize
-     * @param jsonReader
+     *
+     * @param maxPayloadSize the maximum payload size
+     * @param jsonReader a custom {@link ObjectReader}
      */
     public BeatsParser(int maxPayloadSize, ObjectReader jsonReader) {
         this.maxPayloadSize = maxPayloadSize >= 0 ? maxPayloadSize : Integer.MAX_VALUE;

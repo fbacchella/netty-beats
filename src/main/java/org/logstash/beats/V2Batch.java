@@ -82,7 +82,7 @@ public class V2Batch implements Batch, Closeable {
     void addMessage(int sequenceNumber, ByteBuf buffer, int size) throws InvalidFrameProtocolException {
         if ((size + batchBytes) > maxPayloadSize) {
             batchSize = messages.size();
-            throw new InvalidFrameProtocolException("Oversized payload: " + (size + batchBytes));
+            throw new InvalidFrameProtocolException("Oversize payload: " + (size + batchBytes));
         }
         Message message = new Message(sequenceNumber, buffer.readSlice(size), jsonReader);
         message.setBatch(V2Batch.this);

@@ -97,7 +97,7 @@ public class V2BatchTest {
 
 
     @Test
-    public void testOversizedBatch() throws InvalidFrameProtocolException {
+    public void testOversizeBatch() {
         try (V2Batch batch = new V2Batch(2048)) {
             int size = 4096;
             assertEquals(0, batch.size());
@@ -107,10 +107,8 @@ public class V2BatchTest {
                     batch.addMessage(i, content.asReadOnly(), content.readableBytes());
                 }
             });
-            assertThrows(BeatsParser.InvalidFrameProtocolException.class, () -> {
-                batch.addMessage(70, content.asReadOnly(), content.readableBytes());
-            });
-            assertEquals("Oversized payload: 2055", ex.getMessage());
+            assertThrows(BeatsParser.InvalidFrameProtocolException.class, () -> batch.addMessage(70, content.asReadOnly(), content.readableBytes()));
+            assertEquals("Oversize payload: 2055", ex.getMessage());
             assertEquals(136, batch.size());
             int i = 0;
             for (Message message : batch) {
@@ -139,7 +137,7 @@ public class V2BatchTest {
     }
 
     @Test
-    public void testCompleteReturnWhenTheNumberOfEventDoesntMatchBatchSize() throws InvalidFrameProtocolException {
+    public void testCompleteReturnWhenTheNumberOfEventDoesNotMatchBatchSize() throws InvalidFrameProtocolException {
         try (V2Batch batch = new V2Batch()) {
             int numberOfEvent = 2;
             batch.setBatchSize(numberOfEvent);

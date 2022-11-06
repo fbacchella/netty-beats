@@ -20,14 +20,14 @@ import static org.junit.Assert.assertTrue;
 public class BeatsHandlerTest {
     private static final SecureRandom randomizer = new SecureRandom();
     private SpyListener spyListener;
-    private int startSequenceNumber = randomizer.nextInt(100);
-    private int messageCount = 5;
+    private final int startSequenceNumber = randomizer.nextInt(100);
+    private final int messageCount = 5;
     private V1Batch batch;
 
-    private class SpyListener implements IMessageListener {
+    private static class SpyListener implements IMessageListener {
         private boolean onNewConnectionCalled = false;
         private boolean onConnectionCloseCalled = false;
-        private final List<Message> lastMessages = new ArrayList<Message>();
+        private final List<Message> lastMessages = new ArrayList<>();
 
         @Override
         public void onNewMessage(ChannelHandlerContext ctx, Message message) {

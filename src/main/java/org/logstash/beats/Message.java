@@ -16,7 +16,7 @@ public class Message {
 
     private final int sequence;
     private String identityStream;
-    private Map<String, Object> data;
+    private final Map<String, Object> data;
     private Batch batch;
 
     /**
@@ -24,7 +24,7 @@ public class Message {
      * @param sequence sequence number of the message
      * @param map key/value pairs representing the message
      */
-    public Message(int sequence, Map<String, ? extends Object> map) {
+    public Message(int sequence, Map<String, ?> map) {
         this.sequence = sequence;
         this.data = Collections.unmodifiableMap(new HashMap<>(map));
     }
@@ -54,8 +54,8 @@ public class Message {
     }
 
     /**
-     * Returns the sequence number of this messsage
-     * @return
+     * Returns the sequence number of this message
+     * @return int
      */
     public int getSequence() {
         return sequence;
