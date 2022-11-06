@@ -124,13 +124,13 @@
                     <version>3.4.1</version>
                     <configuration>
                         <quiet />
-                        <bootclasspath>${bootclasspath}</bootclasspath>
-                        <source>${maven.compiler.source}</source>
                         <detectJavaApiLink>true</detectJavaApiLink>
                         <detectLinks>false</detectLinks>
                         <links>
-                            <link>https://netty.io/4.0/api/</link>
+                            <link>https://netty.io/4.1/api/</link>
                             <link>https://logging.apache.org/log4j/2.x/log4j-api/apidocs</link>
+                            <link>https://fasterxml.github.io/jackson-modules-base/javadoc/afterburner/2.14/</link>
+                            <link>https://fasterxml.github.io/jackson-databind/javadoc/2.14/</link>
                         </links>
                         <keywords>true</keywords>
                     </configuration>
@@ -176,15 +176,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <compilerArgs>
-                        <arg>-Xbootclasspath/p:${bootclasspath}</arg>
-                    </compilerArgs>
-                    <showWarnings>false</showWarnings>
-                    <!-- needed for maven-plugin-javadoc to find the source version to use -->
-                    <source>${maven.compiler.source}</source>
-                    <target>${maven.compiler.target}</target>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -246,13 +237,6 @@
                         </reports>
                     </reportSet>
                 </reportSets>
-                <configuration>
-                    <links>
-                        <link>https://netty.io/4.0/api/</link>
-                        <link>https://logging.apache.org/log4j/2.0/log4j-api/apidocs</link>
-                    </links>
-                    <keywords>true</keywords>
-                </configuration>
             </plugin>
         </plugins>
     </reporting>
