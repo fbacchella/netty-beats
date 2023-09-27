@@ -1,15 +1,16 @@
 package org.logstash.beats;
 
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.junit.Before;
+import org.junit.Test;
+
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.embedded.EmbeddedChannel;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -112,7 +113,19 @@ public class BeatsHandlerTest {
         assertEquals(messageCount, spyListener.getLastMessages().size());
         Ack ack = embeddedChannel.readOutbound();
         assertEquals(Protocol.VERSION_1, ack.getProtocol());
-        assertEquals(ack.getSequence(), startSequenceNumber + messageCount - 1);
+        assertEquals(startSequenceNumber + messageCount - 1, ack.getSequence());
         embeddedChannel.close();
     }
+
+    @Test
+    public void testAcksZeroSequenceForEmptyBatch() {
+        EmbeddedChannel embeddedChannel = new EmbeddedChannel(new BeatsHandler(spyListener));
+        embeddedChannel.writeInbound(new V2Batch());
+        assertEquals(0, spyListener.getLastMessages().size());
+        Ack ack = embeddedChannel.readOutbound();
+        assertEquals(Protocol.VERSION_2, ack.getProtocol());
+        assertEquals(0, ack.getSequence());
+        embeddedChannel.close();
+    }
+
 }

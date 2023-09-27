@@ -143,6 +143,10 @@ public class BeatsParser extends ByteToMessageDecoder {
                 if (!batch.isEmpty()) {
                     logger.warn("New window size received but the current batch was not complete, sending the current batch");
                     batchComplete(out);
+                } else if (batch.getBatchSize() == 0) {
+                    logger.debug("New window size 0 received, sending an empty batch");
+                    out.add(batch);
+                    batchComplete(out);
                 }
 
                 transition(States.READ_HEADER);

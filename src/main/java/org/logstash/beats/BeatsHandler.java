@@ -42,6 +42,10 @@ public class BeatsHandler extends SimpleChannelInboundHandler<Batch> {
     public void channelRead0(ChannelHandlerContext ctx, Batch batch) {
         logger.debug("{}", () -> format("Received a new payload"));
         try {
+            if (batch.isEmpty()) {
+                logger.debug("Sending 0-seq ACK for empty batch");
+                writeAck(ctx, batch.getProtocol(), 0);
+            }
             for (Message message : batch) {
                 logger.debug("{}", () -> format("Sending a new message for the listener, sequence: " + message.getSequence()));
                 messageListener.onNewMessage(ctx, message);
