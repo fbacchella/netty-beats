@@ -114,7 +114,7 @@ public class V2BatchTest {
             for (Message message : batch) {
                 assertEquals(message.getSequence(), i++);
                 Map<?, ?> data = message.getData();
-                assertTrue(data.size() == 0 || data.size() == 1);
+                assertTrue(data.isEmpty() || data.size() == 1);
             }
         }
     }
