@@ -2,7 +2,7 @@ version: 2.1
 jobs:
     checkout:
         docker:
-            - image: cimg/openjdk:17.0
+            - image: cimg/openjdk:20.0
         steps:
             - checkout
             - restore_cache:
@@ -10,7 +10,7 @@ jobs:
             - run: mkdir -p /home/circleci/.sonar/cache /home/circleci/.m2/repository
             - run:
                 # A bug in dependency:go-offline, see https://issues.apache.org/jira/browse/MDEP-688
-                command: "mvn -B dependency:resolve dependency:resolve-plugins sonar:help jacoco:help surefire:help -Psonar,versions,gpgsign -s .circleci/settings.xml"
+                command: "mvn -B dependency:resolve dependency:resolve-plugins sonar:help jacoco:help surefire:help gpg:help -Psonar,versions,gpgsign -s .circleci/settings.xml"
                 environment:
                     MAVEN_OPTS: "-Xmx1024m"
             - persist_to_workspace:
@@ -21,7 +21,7 @@ jobs:
                     - home/circleci/project
     build:
         docker:
-            - image: cimg/openjdk:17.0
+            - image: cimg/openjdk:20.0
         steps:
             - attach_workspace:
                 at: /tmp/ws
@@ -39,9 +39,9 @@ jobs:
                 paths:
                     - home/circleci/.m2/repository
                     - home/circleci/project/target
-    testsj17:
+    testsj20:
         docker:
-            - image: cimg/openjdk:17.0
+            - image: cimg/openjdk:20.0
         steps:
             - attach_workspace:
                 at: /tmp/ws
@@ -73,6 +73,27 @@ jobs:
                 paths:
                     - home/circleci/.m2/repository
                     - home/circleci/.sonar/cache
+    testsj17:
+        docker:
+            - image: cimg/openjdk:11.0
+        steps:
+            - attach_workspace:
+                  at: /tmp/ws
+            - run:
+                  command: |
+                      mv -n /tmp/ws/home/circleci/.m2 /home/circleci/
+                      mv -n /tmp/ws/home/circleci/.sonar /home/circleci/
+                      mv -n /tmp/ws/home/circleci/project/* /home/circleci/project/
+                      mv -n /tmp/ws/home/circleci/project/.??* /home/circleci/project/
+            - run:
+                  command: |
+                      mkdir -p /tmp/$CIRCLE_JOB
+                      mvn -B test -Pskip -Darg.line="-Xmx2048m" -s .circleci/settings.xml
+                  environment:
+                      MAVEN_OPTS: "-Xmx512m"
+            - store_test_results:
+                  path: target/surefire-reports
+            #don't persist_to_workspace, can't be done in parallel with testsj20
     testsj11:
         docker:
             - image: cimg/openjdk:11.0
@@ -117,7 +138,7 @@ jobs:
             #don't persist_to_workspace, can't be done in parallel with testsj17
     publish:
         docker:
-            - image: cimg/openjdk:17.0
+            - image: cimg/openjdk:20.0
         steps:
             - attach_workspace:
                 at: /tmp/ws
@@ -127,9 +148,12 @@ jobs:
                     mv -n /tmp/ws/home/circleci/.sonar /home/circleci/
                     mv -n /tmp/ws/home/circleci/project/* /home/circleci/project/
                     mv -n /tmp/ws/home/circleci/project/.??* /home/circleci/project/
-                    echo $SECRING_GPG_ASC_BASE64 | base64 --decode | gpg --batch --no-tty --import --yes
             - run:
                 command: |
+                    if [ -n "$SECRING_GPG_ASC_BASE64" ] ; then
+                        echo "$SECRING_GPG_ASC_BASE64" | base64 --decode | gpg --batch --no-tty --import --yes
+                        GPGSIGN="-P gpgsign -Dgpg.keyname=41438883"
+                    fi
                     # If no symbolic name, it's a PR, will not publish results
                     if [ -n "$(git symbolic-ref HEAD 2>/dev/null )" -a "$CIRCLE_REPOSITORY_URL" == "git@github.com:fbacchella/netty-beats.git" ] ; then
                         PUBLISH="deploy"
@@ -137,7 +161,7 @@ jobs:
                         PUBLISH="install"
                     fi
                     echo "publishing jobs: $PUBLISH"
-                    mvn -B $PUBLISH -Pskip,gpgsign -Dmaven.test.skip=true -s .circleci/settings.xml -Dgpg.keyname=8C272041
+                    mvn -B $PUBLISH -Pskip $GPGSIGN -Dmaven.test.skip=true -s .circleci/settings.xml
                 environment:
                     MAVEN_OPTS: "-Xmx2048m"
             - persist_to_workspace:
@@ -147,7 +171,7 @@ jobs:
                     - home/circleci/.sonar/cache
     savecache:
         docker:
-            - image: cimg/openjdk:17.0
+            - image: cimg/openjdk:20.0
         steps:
             - attach_workspace:
                 at: /tmp/ws
@@ -176,6 +200,9 @@ workflows:
           requires:
               - build
       - testsj17:
+            requires:
+                - build
+      - testsj20:
           context: "Security variables"
           requires:
               - build
@@ -185,6 +212,7 @@ workflows:
               - testsj8
               - testsj11
               - testsj17
+              - testsj20
       - savecache:
           requires:
               - publish
