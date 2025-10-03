@@ -1,9 +1,9 @@
 <settings>
     <servers>
         <server>
-            <id>ossrh</id>
-            <username>${env.CI_DEPLOY_USERNAME}</username>
-            <password>${env.CI_DEPLOY_PASSWORD}</password>
+            <id>central</id>
+            <username>${env.MAVENCENTRAL_USERNAME}</username>
+            <password>${env.MAVENCENTRAL_PASSWORD}</password>
         </server>
     </servers>
     <profiles>
@@ -12,7 +12,7 @@
             <properties>
                 <sonar.host.url>https://sonarcloud.io</sonar.host.url>
                 <sonar.organization>${env.SONARCLOUD_ORG}</sonar.organization>
-                <sonar.login>${env.SONARCLOUD_LOGIN}</sonar.login>
+                <sonar.token>${env.SONARCLOUD_LOGIN}</sonar.token>
             </properties>
         </profile>
         <profile>

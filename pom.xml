@@ -133,7 +133,7 @@
                         <detectLinks>false</detectLinks>
                         <links>
                             <link>https://netty.io/4.1/api/</link>
-                            <link>https://logging.apache.org/log4j/2.x/log4j-api/apidocs</link>
+                            <link>https://logging.apache.org/log4j/2.x/javadoc/log4j-api/</link>
                             <link>https://fasterxml.github.io/jackson-modules-base/javadoc/afterburner/2.14/</link>
                             <link>https://fasterxml.github.io/jackson-databind/javadoc/2.14/</link>
                         </links>
@@ -174,6 +174,11 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-gpg-plugin</artifactId>
                     <version>3.2.8</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.sonatype.central</groupId>
+                    <artifactId>central-publishing-maven-plugin</artifactId>
+                    <version>0.9.0</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -223,6 +228,14 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-site-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <extensions>true</extensions>
+                <configuration>
+                    <publishingServerId>central</publishingServerId>
+                </configuration>
             </plugin>
         </plugins>
     </build>
@@ -355,12 +368,12 @@
 
     <distributionManagement>
         <snapshotRepository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+            <id>central</id>
+            <url>https://central.sonatype.com/repository/maven-snapshots</url>
         </snapshotRepository>
         <repository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+            <id>central</id>
+            <url>https://repo1.maven.org/maven2</url>
         </repository>
     </distributionManagement>
 
