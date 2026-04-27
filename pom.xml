@@ -4,17 +4,19 @@
 
     <groupId>fr.loghub</groupId>
     <artifactId>netty-beats</artifactId>
-    <version>1.0.2-SNAPSHOT</version>
+    <version>1.1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <log4j.version>2.25.2</log4j.version>
         <surefire.version>3.5.4</surefire.version>
+        <jackson.version>2.20.0</jackson.version>
         <dependency.locations.enabled>false</dependency.locations.enabled>
         <!-- Indirection needed to keep optionnal jacoco settings and external argument lines-->
         <arg.line></arg.line>
         <argLine>${arg.line}</argLine>
+        <maven.compiler.release>11</maven.compiler.release>
     </properties>
 
     <dependencies>
@@ -44,7 +46,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.module</groupId>
             <artifactId>jackson-module-afterburner</artifactId>
-            <version>2.20.0</version>
+            <version>${jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
@@ -134,8 +136,9 @@
                         <links>
                             <link>https://netty.io/4.1/api/</link>
                             <link>https://logging.apache.org/log4j/2.x/javadoc/log4j-api/</link>
-                            <link>https://fasterxml.github.io/jackson-modules-base/javadoc/afterburner/2.14/</link>
-                            <link>https://fasterxml.github.io/jackson-databind/javadoc/2.14/</link>
+                            <link>https://javadoc.io/doc/com.fasterxml.jackson.module/jackson-module-afterburner/${jackson.version}</link>
+                            <link>https://javadoc.io/doc/com.fasterxml.jackson.core/jackson-core/${jackson.version}</link>
+                            <link>https://javadoc.io/doc/com.fasterxml.jackson.core/jackson-databind/${jackson.version}</link>
                         </links>
                         <keywords>true</keywords>
                     </configuration>
@@ -277,25 +280,6 @@
     </reporting>
 
     <profiles>
-        <profile>
-            <id>java8</id>
-            <activation>
-                <jdk>1.8</jdk>
-            </activation>
-            <properties>
-                <maven.compiler.source>1.8</maven.compiler.source>
-                <maven.compiler.target>1.8</maven.compiler.target>
-            </properties>
-        </profile>
-        <profile>
-            <id>notjava8</id>
-            <activation>
-                <jdk>(1.8,)</jdk>
-            </activation>
-            <properties>
-                <maven.compiler.release>8</maven.compiler.release>
-            </properties>
-        </profile>
         <profile>
             <id>sonar</id>
             <build>
