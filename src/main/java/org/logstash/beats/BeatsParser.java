@@ -248,7 +248,7 @@ public class BeatsParser extends ByteToMessageDecoder {
     private ByteBuf inflateCompressedFrame(ChannelHandlerContext ctx, ByteBuf in)
             throws IOException, InvalidFrameProtocolException {
         // Estimation of decompressed out. It's a json body, a good compression ratio can be expected
-        ByteBuf out = ctx.alloc().buffer(requiredBytes * 8, maxPayloadSize + 1);
+        ByteBuf out = ctx.alloc().buffer(requiredBytes * 8, Math.max(requiredBytes * 8, maxPayloadSize));
         ByteBuffer buffer = in.nioBuffer();
         try {
             inflater.setInput(buffer);
@@ -257,10 +257,10 @@ public class BeatsParser extends ByteToMessageDecoder {
             do {
                 int len = inflater.inflate(tmp);
                 if (len > 0) {
-                    out.writeBytes(tmp, 0, len);
-                    if (out.readableBytes() > maxPayloadSize) {
-                        throw new InvalidFrameProtocolException("Oversized compressed payload: " + out.readableBytes());
+                    if ((out.readableBytes() + len) > maxPayloadSize) {
+                        throw new InvalidFrameProtocolException("Oversized compressed payload: " + (out.readableBytes() + len));
                     }
+                    out.writeBytes(tmp, 0, len);
                 }
             } while ( ! inflater.finished() && ! inflater.needsInput());
             in.skipBytes(buffer.position());

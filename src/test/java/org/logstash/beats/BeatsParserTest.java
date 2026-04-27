@@ -1,13 +1,16 @@
 package org.logstash.beats;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.zip.Deflater;
 
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -20,6 +23,7 @@ import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
+import io.netty.handler.codec.DecoderException;
 
 import static org.hamcrest.Matchers.isA;
 import static org.junit.Assert.assertEquals;
@@ -238,6 +242,32 @@ public class BeatsParserTest {
 
         payload.writeByte(3);
         sendPayloadToParser(payload);
+    }
+
+    @Test
+    public void testOverflowCompression() {
+        ByteBuf payload = Unpooled.buffer();
+
+        payload.writeByte(Protocol.VERSION_2);
+        payload.writeByte(Protocol.CODE_COMPRESSED_FRAME);
+
+        String inputString = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+        byte[] input = inputString.getBytes(StandardCharsets.UTF_8);
+        byte[] output = new byte[input.length];
+        Deflater compresser = new Deflater();
+        compresser.setInput(input);
+        compresser.finish();
+        int compressedDataLength = compresser.deflate(output);
+        compresser.end();
+        payload.writeInt(compressedDataLength);
+        payload.writeBytes(output, 0, compressedDataLength);
+
+        EmbeddedChannel channel = new EmbeddedChannel(new BeatsParser(32));
+        channel.writeOutbound(payload);
+        Object o = channel.readOutbound();
+        DecoderException de = Assert.assertThrows(DecoderException.class, () ->  channel.writeInbound(o));
+        Throwable ex = de.getCause();
+        Assert.assertEquals("Oversized compressed payload: " + input.length, ex.getMessage());
     }
 
     private void sendInvalidV1Payload(long size) {
