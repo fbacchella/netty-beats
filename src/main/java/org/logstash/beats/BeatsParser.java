@@ -1,12 +1,13 @@
 package org.logstash.beats;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
-import java.util.zip.InflaterOutputStream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -14,7 +15,6 @@ import org.apache.logging.log4j.Logger;
 import com.fasterxml.jackson.databind.ObjectReader;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufOutputStream;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 
@@ -48,6 +48,7 @@ public class BeatsParser extends ByteToMessageDecoder {
     private final int maxPayloadSize;
     private boolean decodingCompressedBuffer = false;
     private final ObjectReader jsonReader;
+    private final Inflater inflater = new Inflater();
 
     /**
      * Create a beats parser with no maximum payload size check.
@@ -244,24 +245,35 @@ public class BeatsParser extends ByteToMessageDecoder {
             throw e;
         }
     }
-
-    private ByteBuf inflateCompressedFrame(ChannelHandlerContext ctx, ByteBuf in) throws IOException, InvalidFrameProtocolException {
-        ByteBuf buffer = ctx.alloc().buffer(requiredBytes);
-        Inflater inflater = new Inflater();
-        try (ByteBufOutputStream buffOutput = new ByteBufOutputStream(buffer);
-             InflaterOutputStream inflaterStream = new InflaterOutputStream(buffOutput, inflater)
-        ) {
-            in.readBytes(inflaterStream, requiredBytes);
-            if (buffer.readableBytes() > maxPayloadSize) {
-                throw new InvalidFrameProtocolException("Oversized compressed payload: " + buffer.readableBytes());
-            }
-        } catch (IOException | InvalidFrameProtocolException | RuntimeException ex) {
-            buffer.release();
+    private ByteBuf inflateCompressedFrame(ChannelHandlerContext ctx, ByteBuf in)
+            throws IOException, InvalidFrameProtocolException {
+        // Estimation of decompressed out. It's a json body, a good compression ratio can be expected
+        ByteBuf out = ctx.alloc().buffer(requiredBytes * 8, maxPayloadSize + 1);
+        ByteBuffer buffer = in.nioBuffer();
+        try {
+            inflater.setInput(buffer);
+            // Temporary buffer for decompression
+            byte[] tmp = new byte[8192];
+            do {
+                int len = inflater.inflate(tmp);
+                if (len > 0) {
+                    out.writeBytes(tmp, 0, len);
+                    if (out.readableBytes() > maxPayloadSize) {
+                        throw new InvalidFrameProtocolException("Oversized compressed payload: " + out.readableBytes());
+                    }
+                }
+            } while ( ! inflater.finished() && ! inflater.needsInput());
+            in.skipBytes(buffer.position());
+            return out;
+        } catch (DataFormatException e) {
+            out.release();
+            throw new IOException("Invalid compressed data", e);
+        } catch (RuntimeException ex) {
+            out.release();
             throw ex;
         } finally {
             inflater.end();
         }
-        return buffer;
     }
 
     private boolean hasEnoughBytes(ByteBuf in) {
