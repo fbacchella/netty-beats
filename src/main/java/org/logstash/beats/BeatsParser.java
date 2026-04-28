@@ -213,21 +213,7 @@ public class BeatsParser extends ByteToMessageDecoder {
             }
             case READ_COMPRESSED_FRAME: {
                 logger.trace("Running: READ_COMPRESSED_FRAME");
-                // Use the compressed size as the safe start for the buffer.
-                ByteBuf buffer;
-                buffer = inflateCompressedFrame(ctx, in);
-                transition(States.READ_HEADER);
-
-                decodingCompressedBuffer = true;
-                try {
-                    while (buffer.readableBytes() > 0) {
-                        decode(ctx, buffer, out);
-                    }
-                } finally {
-                    decodingCompressedBuffer = false;
-                    buffer.release();
-                    transition(States.READ_HEADER);
-                }
+                inflateCompressedFrame(ctx, in, out);
                 break;
             }
             case READ_JSON: {
@@ -245,11 +231,12 @@ public class BeatsParser extends ByteToMessageDecoder {
             throw e;
         }
     }
-    private ByteBuf inflateCompressedFrame(ChannelHandlerContext ctx, ByteBuf in)
+
+    private void inflateCompressedFrame(ChannelHandlerContext ctx, ByteBuf in, List<Object> content)
             throws IOException, InvalidFrameProtocolException {
-        // Estimation of decompressed out. It's a json body, a good compression ratio can be expected
-        ByteBuf out = ctx.alloc().buffer(requiredBytes * 8, Math.max(requiredBytes * 8, maxPayloadSize));
         ByteBuffer buffer = in.nioBuffer();
+        // Estimation of decompressed out. It's a json body, a good compression ratio can be expected
+        ByteBuf expandedPayload = ctx.alloc().buffer(requiredBytes * 8, Math.max(requiredBytes * 8, maxPayloadSize));
         try {
             inflater.setInput(buffer);
             // Temporary buffer for decompression
@@ -257,22 +244,34 @@ public class BeatsParser extends ByteToMessageDecoder {
             do {
                 int len = inflater.inflate(tmp);
                 if (len > 0) {
-                    if ((out.readableBytes() + len) > maxPayloadSize) {
-                        throw new InvalidFrameProtocolException("Oversized compressed payload: " + (out.readableBytes() + len));
+                    if ((expandedPayload.readableBytes() + len) > maxPayloadSize) {
+                        throw new InvalidFrameProtocolException("Oversized compressed payload: " + (expandedPayload.readableBytes() + len));
                     }
-                    out.writeBytes(tmp, 0, len);
+                    expandedPayload.writeBytes(tmp, 0, len);
                 }
             } while ( ! inflater.finished() && ! inflater.needsInput());
             in.skipBytes(buffer.position());
-            return out;
+            walkCompressedPayload(ctx, expandedPayload, content);
         } catch (DataFormatException e) {
-            out.release();
             throw new IOException("Invalid compressed data", e);
-        } catch (RuntimeException ex) {
-            out.release();
-            throw ex;
         } finally {
+            expandedPayload.release();
             inflater.end();
+        }
+    }
+
+    private void walkCompressedPayload(ChannelHandlerContext ctx, ByteBuf in, List<Object> content)
+            throws InvalidFrameProtocolException, IOException {
+        transition(States.READ_HEADER);
+
+        decodingCompressedBuffer = true;
+        try {
+            while (in.readableBytes() > 0) {
+                decode(ctx, in, content);
+            }
+        } finally {
+            decodingCompressedBuffer = false;
+            transition(States.READ_HEADER);
         }
     }
 
