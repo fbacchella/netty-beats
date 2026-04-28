@@ -1,11 +1,14 @@
 package org.logstash.beats;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.Objects;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.net.ssl.SSLHandshakeException;
 
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -15,6 +18,10 @@ import io.netty.channel.SimpleChannelInboundHandler;
 public class BeatsHandler extends SimpleChannelInboundHandler<Batch> {
 
     private static final Logger logger = LogManager.getLogger();
+    private static final int MAX_CAUSE_NESTING = 10;
+
+    private final AtomicBoolean isQuietPeriod = new AtomicBoolean(false);
+
     private final IMessageListener messageListener;
     private ChannelHandlerContext context;
 
@@ -23,9 +30,9 @@ public class BeatsHandler extends SimpleChannelInboundHandler<Batch> {
     }
 
     @Override
-    public void channelActive(final ChannelHandlerContext ctx) throws Exception {
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
         context = ctx;
-        logger.trace("{}", () -> format("Channel Active"));
+        logger.trace("{} Channel Active", this::logPrefix);
         super.channelActive(ctx);
         messageListener.onNewConnection(ctx);
     }
@@ -33,26 +40,19 @@ public class BeatsHandler extends SimpleChannelInboundHandler<Batch> {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         super.channelInactive(ctx);
-        logger.trace("{}", () -> format("Channel Inactive"));
+        logger.trace("{} Channel Inactive", this::logPrefix);
         messageListener.onConnectionClose(ctx);
     }
 
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, Batch batch) {
-        logger.debug("{}", () -> format("Received a new payload"));
+        logger.debug("{} Received a new payload", this::logPrefix);
         try {
-            if (batch.isEmpty()) {
-                logger.debug("Sending 0-seq ACK for empty batch");
-                writeAck(ctx, batch.getProtocol(), 0);
-            }
-            for (Message message : batch) {
-                logger.debug("{}", () -> format("Sending a new message for the listener, sequence: " + message.getSequence()));
-                messageListener.onNewMessage(ctx, message);
-
-                if (needAck(message)) {
-                    ack(ctx, message);
-                }
+            if (isQuietPeriod.get()) {
+                logger.debug("{} Received batch but no executors available, ignoring...", this::logPrefix);
+            } else {
+                processBatchAndSendAck(ctx, batch);
             }
         } finally {
             //this channel is done processing this payload, instruct the connection handler to stop sending TCP keep alive
@@ -75,28 +75,56 @@ public class BeatsHandler extends SimpleChannelInboundHandler<Batch> {
      * overlap Filebeat transmission; we were recommending multiline at the source in v5 and in v6 we enforce it.
      */
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         try {
             if (!(cause instanceof SSLHandshakeException)) {
                 messageListener.onException(ctx, cause);
             }
-            String causeMessage = cause.getMessage() == null ? cause.getClass().toString() : cause.getMessage();
-
-            logger.error("{}", () -> format("Handling exception: " + causeMessage));
-            logger.catching(Level.DEBUG, cause);
+            if (isNoisyException(cause)) {
+                logger.info("{} closing{}", this::logPrefix, () -> logger.isDebugEnabled() ?  " (%s)".formatted(cause.getMessage()) : "");
+            } else {
+                Throwable realCause = extractCause(cause, 0);
+                logger.atInfo()
+                      .withThrowable(logger.isDebugEnabled() ? cause : null)
+                      .log("{} Handling exception: {} (caused by: {})", this::logPrefix, () -> cause, () -> realCause);
+                // when execution tasks rejected, no need to forward the exception to netty channel handlers
+                if (cause instanceof RejectedExecutionException) {
+                    // we no longer have event executors available since they are terminated, mostly by shutdown process
+                    if (Objects.nonNull(cause.getMessage()) && cause.getMessage().contains("event executor terminated")) {
+                        isQuietPeriod.compareAndSet(false, true);
+                    }
+                } else {
+                    super.exceptionCaught(ctx, cause);
+                }
+            }
         } finally {
             ctx.flush();
             ctx.close();
         }
     }
 
-    private boolean needAck(Message message) {
-        return message.getSequence() == message.getBatch().getHighestSequence();
+    private void processBatchAndSendAck(ChannelHandlerContext ctx, Batch batch) {
+        if (batch.isEmpty()) {
+            logger.debug("Sending 0-seq ACK for empty batch");
+            writeAck(ctx, batch.getProtocol(), 0);
+        }
+        for (Message message : batch) {
+            logger.debug("{} Sending a new message for the listener, sequence: {}", this::logPrefix, message::getSequence);
+            messageListener.onNewMessage(ctx, message);
+
+            if (needAck(message)) {
+                logger.trace("{} Acking message number {}", this::logPrefix, message::getSequence);
+                writeAck(ctx, message.getBatch().getProtocol(), message.getSequence());
+            }
+        }
     }
 
-    private void ack(ChannelHandlerContext ctx, Message message) {
-        logger.trace("{}", () -> format("Acking message number " + message.getSequence()));
-        writeAck(ctx, message.getBatch().getProtocol(), message.getSequence());
+    private boolean isNoisyException(Throwable ex) {
+        return ex instanceof IOException && "Connection reset by peer".equals(ex.getMessage());
+    }
+
+    private boolean needAck(Message message) {
+        return message.getSequence() == message.getBatch().getHighestSequence();
     }
 
     private void writeAck(ChannelHandlerContext ctx, byte protocol, int sequence) {
@@ -107,22 +135,32 @@ public class BeatsHandler extends SimpleChannelInboundHandler<Batch> {
      * There is no easy way in Netty to support MDC directly,
      * we will use similar logic than Netty's LoggingHandler
      */
-    private String format(String message) {
+    private String logPrefix() {
         SocketAddress local = context.channel().localAddress();
         SocketAddress remote = context.channel().remoteAddress();
 
         String localhost = addressToString(local);
         String remotehost = addressToString(remote);
 
-        return "[local: " + localhost + ", remote: " + remotehost + "] " + message;
+        return "[local: " + localhost + ", remote: " + remotehost + "] ";
     }
 
     private String addressToString(SocketAddress saddr) {
-        if (saddr instanceof InetSocketAddress) {
-            InetSocketAddress inetaddr = (InetSocketAddress) saddr;
+        if (saddr instanceof InetSocketAddress inetaddr) {
             return inetaddr.getAddress().getHostAddress() + ":" + inetaddr.getPort();
         } else {
-            return "undefined";
+            return saddr.toString();
+        }
+    }
+
+    private Throwable extractCause(Throwable ex, int nesting) {
+        Throwable cause = ex.getCause();
+        if (cause == null || cause == ex) {
+            return ex;
+        } else if (nesting >= MAX_CAUSE_NESTING) {
+            return cause; // do not recurse infinitely
+        } else {
+            return extractCause(cause, nesting + 1);
         }
     }
 
