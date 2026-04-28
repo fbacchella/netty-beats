@@ -95,48 +95,6 @@ jobs:
         - store_test_results:
             path: target/surefire-reports
         #don't persist_to_workspace, can't be done in parallel with testsj25
-    testsj17:
-        docker:
-            - image: cimg/openjdk:17.0
-        steps:
-            - attach_workspace:
-                  at: /tmp/ws
-            - run:
-                  command: |
-                      mv -n /tmp/ws/home/circleci/.m2 /home/circleci/
-                      mv -n /tmp/ws/home/circleci/.sonar /home/circleci/
-                      mv -n /tmp/ws/home/circleci/project/* /home/circleci/project/
-                      mv -n /tmp/ws/home/circleci/project/.??* /home/circleci/project/
-            - run:
-                  command: |
-                      mkdir -p /tmp/$CIRCLE_JOB
-                      mvn -B verify -Pskip -Darg.line="-Xmx2048m" -s .circleci/settings.xml
-                  environment:
-                      MAVEN_OPTS: "-Xmx512m"
-            - store_test_results:
-                  path: target/surefire-reports
-            #don't persist_to_workspace, can't be done in parallel with testsj25
-    testsj11:
-        docker:
-            - image: cimg/openjdk:11.0
-        steps:
-            - attach_workspace:
-                at: /tmp/ws
-            - run:
-                command: |
-                    mv -n /tmp/ws/home/circleci/.m2 /home/circleci/
-                    mv -n /tmp/ws/home/circleci/.sonar /home/circleci/
-                    mv -n /tmp/ws/home/circleci/project/* /home/circleci/project/
-                    mv -n /tmp/ws/home/circleci/project/.??* /home/circleci/project/
-            - run:
-                command: |
-                    mkdir -p /tmp/$CIRCLE_JOB
-                    mvn -B verify -Pskip -Darg.line="-Xmx2048m" -s .circleci/settings.xml
-                environment:
-                    MAVEN_OPTS: "-Xmx512m"
-            - store_test_results:
-                path: target/surefire-reports
-            #don't persist_to_workspace, can't be done in parallel with testsj25
     publish:
         docker:
             - image: cimg/openjdk:25.0
@@ -194,12 +152,6 @@ workflows:
       - build:
           requires:
               - checkout
-      - testsj11:
-          requires:
-              - build
-      - testsj17:
-            requires:
-                - build
       - testsj21:
           requires:
               - build
@@ -210,8 +162,6 @@ workflows:
       - publish:
           context: "Security variables"
           requires:
-              - testsj11
-              - testsj17
               - testsj21
               - testsj25
       - savecache:

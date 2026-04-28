@@ -17,7 +17,7 @@
         <!-- Indirection needed to keep optionnal jacoco settings and external argument lines-->
         <arg.line></arg.line>
         <argLine>${arg.line}</argLine>
-        <maven.compiler.release>11</maven.compiler.release>
+        <maven.compiler.release>21</maven.compiler.release>
     </properties>
 
     <dependencies>
