@@ -45,8 +45,9 @@ public class BeatsParser extends ByteToMessageDecoder {
     private States currentState = States.READ_HEADER;
     private int requiredBytes = States.READ_HEADER.length;
     private int sequence = 0;
-    private final int maxPayloadSize;
     private boolean decodingCompressedBuffer = false;
+
+    private final int maxPayloadSize;
     private final ObjectReader jsonReader;
     private final Inflater inflater = new Inflater();
 
@@ -59,7 +60,7 @@ public class BeatsParser extends ByteToMessageDecoder {
     }
 
     /**
-     * Create a parser with a maximum payload size. If value is less than 0, it's not checked.
+     * Create a parser with a maximum payload size. If the value is less than 0, it's not checked.
      * 
      * @param maxPayloadSize the maximum payload size
      */
@@ -69,7 +70,7 @@ public class BeatsParser extends ByteToMessageDecoder {
     }
 
     /**
-     * Create a parser with a maximum payload size and a non default JSON reader. Any value less or equal to 0 for the max payload disable check.
+     * Create a parser with a maximum payload size and a non-default JSON reader. Any value less or equal to 0 for the max payload disable check.
      *
      * @param maxPayloadSize the maximum payload size
      * @param jsonReader a custom {@link ObjectReader}
@@ -91,145 +92,146 @@ public class BeatsParser extends ByteToMessageDecoder {
             }
 
             switch (currentState) {
-            case READ_HEADER: {
+            case READ_HEADER -> {
                 logger.trace("Running: READ_HEADER");
-
-                byte currentVersion = in.readByte();
-                if (batch == null) {
-                    if (Protocol.isVersion2(currentVersion)) {
-                        logger.trace("Frame version 2 detected");
-                        batch = new V2Batch(maxPayloadSize, jsonReader);
-                    } else if (Protocol.isVersion1(currentVersion)) {
-                        logger.trace("Frame version 1 detected");
-                        batch = new V1Batch();
-                    } else {
-                        throw new InvalidFrameProtocolException("Unsupported protocol version: " + currentVersion);
-                    }
-                }
-                transition(States.READ_FRAME_TYPE);
-                break;
+                decodeHeader(in);
             }
-            case READ_FRAME_TYPE: {
-                byte frameType = in.readByte();
-
-                switch (frameType) {
-                case Protocol.CODE_WINDOW_SIZE:
-                    transition(States.READ_WINDOW_SIZE);
-                    break;
-                case Protocol.CODE_JSON_FRAME:
-                    // Reading Sequence + size of the payload
-                    transition(States.READ_JSON_HEADER);
-                    break;
-                case Protocol.CODE_COMPRESSED_FRAME:
-                    transition(States.READ_COMPRESSED_FRAME_HEADER);
-                    break;
-                case Protocol.CODE_FRAME:
-                    transition(States.READ_DATA_FIELDS);
-                    break;
-                default:
-                    throw new InvalidFrameProtocolException("Invalid Frame Type, received: " + frameType);
-                }
-                break;
+            case READ_FRAME_TYPE -> {
+                logger.trace("Running: READ_FRAME_TYPE");
+                decodeFrameType(in);
             }
-            case READ_WINDOW_SIZE: {
+            case READ_WINDOW_SIZE -> {
                 logger.trace("Running: READ_WINDOW_SIZE");
-                int batchSize = tryReadUnsigned(in, "Invalid window size", true);
-                batch.setBatchSize(batchSize);
-                logger.debug("New window size is {}", batchSize);
-
-                // This is unlikely to happen but I have no way to known when a frame is
-                // actually completely done other than checking the windows and the sequence number,
-                // If the FSM read a new window and I have still
-                // events buffered I should send the current batch down to the next handler.
-                if (!batch.isEmpty()) {
-                    logger.warn("New window size received but the current batch was not complete, sending the current batch");
-                    batchComplete(out);
-                } else if (batch.getBatchSize() == 0) {
-                    logger.debug("New window size 0 received, sending an empty batch");
-                    out.add(batch);
-                    batchComplete(out);
-                }
-
-                transition(States.READ_HEADER);
-                break;
+                decodeWindowSize(in, out);
             }
-            case READ_DATA_FIELDS: {
-                // Lumberjack version 1 protocol, which use the Key:Value format.
+            case READ_DATA_FIELDS -> {
                 logger.trace("Running: READ_DATA_FIELDS");
-                sequence = tryReadUnsigned(in, "Invalid sequence number", true);
-                int fieldsCount = tryReadUnsigned(in, "Invalid number of fields", false);
-                
-                // Using a rough estimation of the size of an empty HashMap
-                if (fieldsCount * 4 > maxPayloadSize) {
-                    throw new InvalidFrameProtocolException("Oversized entry count: " + fieldsCount);
-                }
-
-                Map<String, String> dataMap = new HashMap<>(fieldsCount);
-
-                // Use a long to avoid overflow
-                long currentPayload = 0;
-                for (int count = 0; count < fieldsCount ; count++) {
-                    currentPayload += 32;  // 32 is the size of the HashMap.Entry
-                    int fieldLength= tryReadUnsigned(in, "Oversized field name length", false);
-                    currentPayload += fieldLength;
-                    if (currentPayload > maxPayloadSize) {
-                        throw new InvalidFrameProtocolException("Oversized payload: " + currentPayload);
-                    }
-                    ByteBuf fieldBuf = in.readSlice(fieldLength);
-                    String field = fieldBuf.toString(StandardCharsets.UTF_8);
-
-                    int dataLength = tryReadUnsigned(in, "Oversized field data length", true);
-                    currentPayload += dataLength;
-                    if (currentPayload > maxPayloadSize) {
-                        throw new InvalidFrameProtocolException("Oversized payload: " + currentPayload);
-                    }
-                    ByteBuf dataBuf = in.readSlice(dataLength);
-                    String data = dataBuf.toString(StandardCharsets.UTF_8);
-
-                    dataMap.put(field, data);
-                }
-                Message message = new Message(sequence, dataMap);
-                ((V1Batch) batch).addMessage(message);
-
-                if (batch.isComplete()) {
-                    batchComplete(out);
-                }
-                transition(States.READ_HEADER);
-
-                break;
+                decodeDataFields(in, out);
             }
-            case READ_JSON_HEADER: {
+            case READ_JSON_HEADER -> {
                 logger.trace("Running: READ_JSON_HEADER");
-                sequence = tryReadUnsigned(in, "Invalid sequence number", true);
-                int jsonPayloadSize = tryReadUnsigned(in, "Invalid json length", false);
-                transition(States.READ_JSON, jsonPayloadSize);
-                break;
+                decodeJsonHeader(in);
             }
-            case READ_COMPRESSED_FRAME_HEADER: {
+            case READ_COMPRESSED_FRAME_HEADER -> {
                 logger.trace("Running: READ_COMPRESSED_FRAME_HEADER");
-                int compressedFrameSize = tryReadUnsigned(in, "Invalid compressed frame size", false);
-                transition(States.READ_COMPRESSED_FRAME, compressedFrameSize);
-                break;
+                decodeCompressedFrameHeader(in);
             }
-            case READ_COMPRESSED_FRAME: {
+            case READ_COMPRESSED_FRAME -> {
                 logger.trace("Running: READ_COMPRESSED_FRAME");
                 inflateCompressedFrame(ctx, in, out);
-                break;
             }
-            case READ_JSON: {
+            case READ_JSON -> {
                 logger.trace("Running: READ_JSON");
-                ((V2Batch) batch).addMessage(sequence, in, requiredBytes);
-                if (batch.isComplete()) {
-                    batchComplete(out);
-                }
-                transition(States.READ_HEADER);
-                break;
+                decodeJson(in, out);
             }
             }
         } catch (InvalidFrameProtocolException | RuntimeException | IOException e) {
             resetOnError(in, out);
             throw e;
         }
+    }
+
+    private void decodeHeader(ByteBuf in) throws InvalidFrameProtocolException {
+        byte currentVersion = in.readByte();
+        if (batch == null) {
+            if (Protocol.isVersion2(currentVersion)) {
+                logger.trace("Frame version 2 detected");
+                batch = new V2Batch(maxPayloadSize, jsonReader);
+            } else if (Protocol.isVersion1(currentVersion)) {
+                logger.trace("Frame version 1 detected");
+                batch = new V1Batch();
+            } else {
+                throw new InvalidFrameProtocolException("Unsupported protocol version: " + currentVersion);
+            }
+        }
+        transition(States.READ_FRAME_TYPE);
+    }
+
+    private void decodeFrameType(ByteBuf in) throws InvalidFrameProtocolException {
+        byte frameType = in.readByte();
+        switch (frameType) {
+            case Protocol.CODE_WINDOW_SIZE -> transition(States.READ_WINDOW_SIZE);
+            case Protocol.CODE_JSON_FRAME -> transition(States.READ_JSON_HEADER);
+            case Protocol.CODE_COMPRESSED_FRAME -> transition(States.READ_COMPRESSED_FRAME_HEADER);
+            case Protocol.CODE_FRAME -> transition(States.READ_DATA_FIELDS);
+            default -> throw new InvalidFrameProtocolException("Invalid Frame Type, received: " + frameType);
+        }
+    }
+
+    private void decodeWindowSize(ByteBuf in, List<Object> out) throws InvalidFrameProtocolException {
+        int batchSize = tryReadUnsigned(in, "Invalid window size", true);
+        batch.setBatchSize(batchSize);
+        logger.debug("New window size is {}", batchSize);
+
+        if (!batch.isEmpty()) {
+            logger.warn("New window size received but the current batch was not complete, sending the current batch");
+            batchComplete(out);
+        } else if (batch.getBatchSize() == 0) {
+            logger.debug("New window size 0 received, sending an empty batch");
+            out.add(batch);
+            batchComplete(out);
+        }
+
+        transition(States.READ_HEADER);
+    }
+
+    private void decodeDataFields(ByteBuf in, List<Object> out) throws InvalidFrameProtocolException {
+        sequence = tryReadUnsigned(in, "Invalid sequence number", true);
+        int fieldsCount = tryReadUnsigned(in, "Invalid number of fields", false);
+
+        if (fieldsCount * 4 > maxPayloadSize) {
+            throw new InvalidFrameProtocolException("Oversized entry count: " + fieldsCount);
+        }
+
+        Map<String, String> dataMap = HashMap.newHashMap(fieldsCount);
+
+        long currentPayload = 0;
+        for (int count = 0; count < fieldsCount; count++) {
+            currentPayload += 32;
+            int fieldLength = tryReadUnsigned(in, "Oversized field name length", false);
+            currentPayload += fieldLength;
+            if (currentPayload > maxPayloadSize) {
+                throw new InvalidFrameProtocolException("Oversized payload: " + currentPayload);
+            }
+            ByteBuf fieldBuf = in.readSlice(fieldLength);
+            String field = fieldBuf.toString(StandardCharsets.UTF_8);
+
+            int dataLength = tryReadUnsigned(in, "Oversized field data length", true);
+            currentPayload += dataLength;
+            if (currentPayload > maxPayloadSize) {
+                throw new InvalidFrameProtocolException("Oversized payload: " + currentPayload);
+            }
+            ByteBuf dataBuf = in.readSlice(dataLength);
+            String data = dataBuf.toString(StandardCharsets.UTF_8);
+
+            dataMap.put(field, data);
+        }
+        Message message = new Message(sequence, dataMap);
+        ((V1Batch) batch).addMessage(message);
+
+        if (batch.isComplete()) {
+            batchComplete(out);
+        }
+        transition(States.READ_HEADER);
+    }
+
+    private void decodeJsonHeader(ByteBuf in) throws InvalidFrameProtocolException {
+        sequence = tryReadUnsigned(in, "Invalid sequence number", true);
+        int jsonPayloadSize = tryReadUnsigned(in, "Invalid json length", false);
+        transition(States.READ_JSON, jsonPayloadSize);
+    }
+
+    private void decodeCompressedFrameHeader(ByteBuf in) throws InvalidFrameProtocolException {
+        int compressedFrameSize = tryReadUnsigned(in, "Invalid compressed frame size", false);
+        transition(States.READ_COMPRESSED_FRAME, compressedFrameSize);
+    }
+
+    private void decodeJson(ByteBuf in, List<Object> out) throws InvalidFrameProtocolException {
+        ((V2Batch) batch).addMessage(sequence, in, requiredBytes);
+        if (batch.isComplete()) {
+            batchComplete(out);
+        }
+        transition(States.READ_HEADER);
     }
 
     private void inflateCompressedFrame(ChannelHandlerContext ctx, ByteBuf in, List<Object> content)
