@@ -28,16 +28,16 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class BeatsParserTest {
+class BeatsParserTest {
 
     private V1Batch v1Batch;
     private V2Batch byteBufBatch;
-    public static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new AfterburnerModule());
+    private static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new AfterburnerModule());
 
     private final int numberOfMessage = 20;
 
     @BeforeEach
-    public void setup() throws Exception{
+    void setup() throws Exception{
         v1Batch = new V1Batch();
 
         for (int i = 1; i <= numberOfMessage; i++) {
@@ -61,33 +61,26 @@ public class BeatsParserTest {
     }
 
     @AfterEach
-    public void tearDown() {
+    void tearDown() {
         Optional.ofNullable(byteBufBatch).ifPresent(V2Batch::release);
     }
 
     @Test
-    public void testEncodingDecodingV1() {
+    void testEncodingDecodingV1() {
         Batch decodedBatch = decodeBatch(v1Batch);
         assertMessages(v1Batch, decodedBatch);
         decodedBatch.release();
     }
 
     @Test
-    public void testCompressedEncodingDecodingJson() {
+    void testCompressedEncodingDecodingJson() {
         Batch decodedBatch = decodeCompressedBatch(byteBufBatch);
         assertMessages(byteBufBatch, decodedBatch);
         decodedBatch.release();
     }
 
     @Test
-    public void testEncodingDecodingFields() {
-        Batch decodedBatch = decodeBatch(v1Batch);
-        assertMessages(v1Batch, decodedBatch);
-        decodedBatch.release();
-    }
-
-    @Test
-    public void testEncodingDecodingFieldWithUTFCharacters() throws Exception {
+    void testEncodingDecodingFieldWithUTFCharacters() throws Exception {
         V2Batch v2Batch = new V2Batch();
 
         // Generate Data with Keys and String with UTF-8
@@ -111,7 +104,7 @@ public class BeatsParserTest {
     }
 
     @Test
-    public void testV1EncodingDecodingFieldWithUTFCharacters() {
+    void testV1EncodingDecodingFieldWithUTFCharacters() {
         V1Batch batch = new V1Batch();
 
         // Generate Data with Keys and String with UTF-8
@@ -131,14 +124,14 @@ public class BeatsParserTest {
     }
 
     @Test
-    public void testCompressedEncodingDecodingFields() {
+    void testCompressedEncodingDecodingFields() {
         Batch decodedBatch = decodeCompressedBatch(v1Batch);
         assertMessages(this.v1Batch, decodedBatch);
         decodedBatch.release();
     }
 
     @Test
-    public void testV1EmptyWindowEmitsEmptyBatch() {
+    void testV1EmptyWindowEmitsEmptyBatch() {
         Batch decodedBatch = decodeBatch(new V1Batch());
 
         assertNotNull(decodedBatch);
@@ -148,7 +141,7 @@ public class BeatsParserTest {
     }
 
     @Test
-    public void testV2EmptyWindowEmitsEmptyBatch() {
+    void testV2EmptyWindowEmitsEmptyBatch() {
         Batch decodedBatch = decodeBatch(new V2Batch());
 
         assertNotNull(decodedBatch);
@@ -158,7 +151,7 @@ public class BeatsParserTest {
     }
 
     @Test
-    public void testV1CompressedFrameEmptyWindowEmitsEmptyBatch() {
+    void testV1CompressedFrameEmptyWindowEmitsEmptyBatch() {
         Batch decodedBatch = decodeCompressedBatch(new V1Batch());
 
         assertNotNull(decodedBatch);
@@ -168,7 +161,7 @@ public class BeatsParserTest {
     }
 
     @Test
-    public void testV2CompressedFrameEmptyWindowEmitsEmptyBatch() {
+    void testV2CompressedFrameEmptyWindowEmitsEmptyBatch() {
         Batch decodedBatch = decodeCompressedBatch(new V2Batch());
 
         assertNotNull(decodedBatch);
@@ -178,20 +171,20 @@ public class BeatsParserTest {
     }
 
     @Test
-    public void testOversizedFields() {
+    void testOversizedFields() {
         DecoderException de = assertThrows(DecoderException.class, () -> decodeBatch(v1Batch, 9));
         assertInstanceOf(BeatsParser.InvalidFrameProtocolException.class, de.getCause());
     }
 
     @Test
-    public void testOversizeJson() {
+    void testOversizeJson() {
         DecoderException de = assertThrows(DecoderException.class, () -> decodeBatch(byteBufBatch, 9));
         assertInstanceOf(BeatsParser.InvalidFrameProtocolException.class, de.getCause());
         assertTrue(de.getMessage().contains("Oversize payload: 54"));
     }
 
     @Test
-    public void testShouldNotCrashOnGarbageData() {
+    void testShouldNotCrashOnGarbageData() {
         byte[] n = new byte[10000];
         new Random().nextBytes(n);
         ByteBuf randomBufferData = Unpooled.wrappedBuffer(n);
@@ -201,27 +194,27 @@ public class BeatsParserTest {
     }
 
     @Test
-    public void testOverflowJsonPayloadShouldRaiseAnException() throws JsonProcessingException {
+    void testOverflowJsonPayloadShouldRaiseAnException() throws JsonProcessingException {
         sendInvalidJSonPayload(4294967295L);
     }
 
     @Test
-    public void testZeroSizeJsonPayloadShouldRaiseAnException() throws JsonProcessingException {
+    void testZeroSizeJsonPayloadShouldRaiseAnException() throws JsonProcessingException {
         sendInvalidJSonPayload(0);
     }
 
     @Test
-    public void testOverflowFieldsCountShouldRaiseAnException() {
+    void testOverflowFieldsCountShouldRaiseAnException() {
         sendInvalidV1Payload(Integer.MAX_VALUE + 1L);
     }
 
     @Test
-    public void testZeroFieldsCountShouldRaiseAnException() {
+    void testZeroFieldsCountShouldRaiseAnException() {
         sendInvalidV1Payload(0);
     }
 
     @Test
-    public void testUnsupportedVersionShouldRaiseAnException() {
+    void testUnsupportedVersionShouldRaiseAnException() {
         ByteBuf payload = Unpooled.buffer();
         payload.writeByte(3);
 
@@ -231,7 +224,7 @@ public class BeatsParserTest {
     }
 
     @Test
-    public void testOverflowCompression() {
+    void testOverflowCompression() {
         ByteBuf payload = Unpooled.buffer();
 
         payload.writeByte(Protocol.VERSION_2);

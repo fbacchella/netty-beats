@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Created by ph on 2016-06-01.
  */
-public class BeatsHandlerTest {
+class BeatsHandlerTest {
     private static final SecureRandom randomizer = new SecureRandom();
     private SpyListener spyListener;
     private final int startSequenceNumber = randomizer.nextInt(100);
@@ -69,7 +69,7 @@ public class BeatsHandlerTest {
     }
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         spyListener = new SpyListener();
         batch = new V1Batch();
         batch.setBatchSize(messageCount);
@@ -80,7 +80,7 @@ public class BeatsHandlerTest {
     }
 
     @Test
-    public void testItCalledOnNewConnectionOnListenerWhenHandlerIsAdded() {
+    void testItCalledOnNewConnectionOnListenerWhenHandlerIsAdded() {
         EmbeddedChannel embeddedChannel = new EmbeddedChannel(new BeatsHandler(spyListener));
         embeddedChannel.writeInbound(batch);
 
@@ -89,7 +89,7 @@ public class BeatsHandlerTest {
     }
 
     @Test
-    public void testItCalledOnConnectionCloseOnListenerWhenChannelIsRemoved() {
+    void testItCalledOnConnectionCloseOnListenerWhenChannelIsRemoved() {
         EmbeddedChannel embeddedChannel = new EmbeddedChannel(new BeatsHandler(spyListener));
         embeddedChannel.writeInbound(batch);
         embeddedChannel.close();
@@ -98,7 +98,7 @@ public class BeatsHandlerTest {
     }
 
     @Test
-    public void testIsCallingNewMessageOnEveryMessage() {
+    void testIsCallingNewMessageOnEveryMessage() {
         EmbeddedChannel embeddedChannel = new EmbeddedChannel(new BeatsHandler(spyListener));
         embeddedChannel.writeInbound(batch);
 
@@ -107,7 +107,7 @@ public class BeatsHandlerTest {
     }
 
     @Test
-    public void testAcksLastMessageInBatch() {
+    void testAcksLastMessageInBatch() {
         EmbeddedChannel embeddedChannel = new EmbeddedChannel(new BeatsHandler(spyListener));
         embeddedChannel.writeInbound(batch);
         assertEquals(messageCount, spyListener.getLastMessages().size());
@@ -118,7 +118,7 @@ public class BeatsHandlerTest {
     }
 
     @Test
-    public void testAcksZeroSequenceForEmptyBatch() {
+    void testAcksZeroSequenceForEmptyBatch() {
         EmbeddedChannel embeddedChannel = new EmbeddedChannel(new BeatsHandler(spyListener));
         embeddedChannel.writeInbound(new V2Batch());
         assertEquals(0, spyListener.getLastMessages().size());

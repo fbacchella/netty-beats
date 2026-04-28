@@ -9,36 +9,36 @@ import java.util.HashMap;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class V1BatchTest {
+class V1BatchTest {
 
     private V1Batch batch;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         batch = new V1Batch();
     }
 
     @Test
-    public void testIsEmpty() {
+    void testIsEmpty() {
         assertTrue(batch.isEmpty());
         batch.addMessage(new Message(1, new HashMap<>()));
         assertFalse(batch.isEmpty());
     }
 
     @Test
-    public void testSize() {
+    void testSize() {
         assertEquals(0, batch.size());
         batch.addMessage(new Message(1, new HashMap<>()));
         assertEquals(1, batch.size());
     }
 
     @Test
-    public void testGetProtocol() {
+    void testGetProtocol() {
         assertEquals(Protocol.VERSION_1, batch.getProtocol());
     }
 
     @Test
-    public void testCompleteReturnTrueWhenIReceiveTheSameAmountOfEvent() {
+    void testCompleteReturnTrueWhenIReceiveTheSameAmountOfEvent() {
         int numberOfEvent = 2;
 
         batch.setBatchSize(numberOfEvent);
@@ -51,7 +51,7 @@ public class V1BatchTest {
     }
 
     @Test
-    public void testCompleteBatchWithSequenceNumbersNotStartingAtOne() {
+    void testCompleteBatchWithSequenceNumbersNotStartingAtOne() {
         int numberOfEvent = 2;
         int startSequenceNumber = new SecureRandom().nextInt(10000);
         batch.setBatchSize(numberOfEvent);
@@ -64,7 +64,7 @@ public class V1BatchTest {
     }
 
     @Test
-    public void testHighSequence(){
+    void testHighSequence(){
         int numberOfEvent = 2;
         int startSequenceNumber = new SecureRandom().nextInt(10000);
         batch.setBatchSize(numberOfEvent);
@@ -77,7 +77,7 @@ public class V1BatchTest {
     }
 
     @Test
-    public void TestCompleteReturnWhenTheNumberOfEventDoesntMatchBatchSize() {
+    void TestCompleteReturnWhenTheNumberOfEventDoesntMatchBatchSize() {
         int numberOfEvent = 2;
 
         batch.setBatchSize(numberOfEvent);

@@ -18,12 +18,12 @@ import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
-public class V2BatchTest {
+class V2BatchTest {
 
-    public static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new AfterburnerModule());
+    static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new AfterburnerModule());
 
     @Test
-    public void testIsEmpty() throws InvalidFrameProtocolException {
+    void testIsEmpty() throws InvalidFrameProtocolException {
         try (V2Batch batch = new V2Batch()) {
             assertTrue(batch.isEmpty());
             ByteBuf content = messageContents();
@@ -33,7 +33,7 @@ public class V2BatchTest {
     }
 
     @Test
-    public void testSize() throws InvalidFrameProtocolException {
+    void testSize() throws InvalidFrameProtocolException {
         try (V2Batch batch = new V2Batch()) {
             assertEquals(0, batch.size());
             ByteBuf content = messageContents();
@@ -43,14 +43,14 @@ public class V2BatchTest {
     }
 
     @Test
-    public void testGetProtocol() {
+    void testGetProtocol() {
         try (V2Batch batch = new V2Batch()) {
             assertEquals(Protocol.VERSION_2, batch.getProtocol());
         }
     }
 
     @Test
-    public void testCompleteReturnTrueWhenIReceiveTheSameAmountOfEvent() throws InvalidFrameProtocolException {
+    void testCompleteReturnTrueWhenIReceiveTheSameAmountOfEvent() throws InvalidFrameProtocolException {
         try (V2Batch batch = new V2Batch()) {
             int numberOfEvent = 2;
             batch.setBatchSize(numberOfEvent);
@@ -63,7 +63,7 @@ public class V2BatchTest {
     }
 
     @Test
-    public void testBigBatch() throws InvalidFrameProtocolException {
+    void testBigBatch() throws InvalidFrameProtocolException {
         try (V2Batch batch = new V2Batch()) {
             int size = 4096;
             assertEquals(0, batch.size());
@@ -80,7 +80,7 @@ public class V2BatchTest {
     }
 
     @Test
-    public void testHighSequence() throws InvalidFrameProtocolException {
+    void testHighSequence() throws InvalidFrameProtocolException {
         try (V2Batch batch = new V2Batch()) {
             int numberOfEvent = 2;
             int startSequenceNumber = new SecureRandom().nextInt(10000);
@@ -97,7 +97,7 @@ public class V2BatchTest {
 
 
     @Test
-    public void testOversizeBatch() {
+    void testOversizeBatch() {
         try (V2Batch batch = new V2Batch(2048)) {
             int size = 4096;
             assertEquals(0, batch.size());
@@ -120,7 +120,7 @@ public class V2BatchTest {
     }
 
     @Test
-    public void testNoDataBatch() throws InvalidFrameProtocolException {
+    void testNoDataBatch() throws InvalidFrameProtocolException {
         try (V2Batch batch = new V2Batch(2048)) {
             assertEquals(0, batch.size());
             ByteBuf content = Unpooled.EMPTY_BUFFER;
@@ -137,7 +137,7 @@ public class V2BatchTest {
     }
 
     @Test
-    public void testCompleteReturnWhenTheNumberOfEventDoesNotMatchBatchSize() throws InvalidFrameProtocolException {
+    void testCompleteReturnWhenTheNumberOfEventDoesNotMatchBatchSize() throws InvalidFrameProtocolException {
         try (V2Batch batch = new V2Batch()) {
             int numberOfEvent = 2;
             batch.setBatchSize(numberOfEvent);
@@ -147,7 +147,7 @@ public class V2BatchTest {
         }
     }
 
-    public static ByteBuf messageContents() {
+    static ByteBuf messageContents() {
         Map<String, String> test = new HashMap<>(1);
         test.put("key", "value");
         try {
@@ -158,7 +158,7 @@ public class V2BatchTest {
         }
     }
 
-    public static ByteBuf messageContents(int count) {
+    static ByteBuf messageContents(int count) {
         Map<String, String> test = new HashMap<>(count);
         for (int i = 0 ; i < count ; i++) {
             test.put("key" + i, "value");

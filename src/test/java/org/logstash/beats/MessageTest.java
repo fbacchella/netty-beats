@@ -5,17 +5,15 @@ import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
-public class MessageTest {
+class MessageTest {
 
     @Test
-    public void testGetData() {
+    void testGetData() {
         Map<String, Object> map = new HashMap<>();
 
         Message message = new Message(1, map);
@@ -23,7 +21,7 @@ public class MessageTest {
     }
 
     @Test
-    public void testGetSequence() {
+    void testGetSequence() {
         Map<String, Object> map = new HashMap<>();
 
         Message message = new Message(1, map);
@@ -31,16 +29,16 @@ public class MessageTest {
     }
 
     @Test
-    public void testComparison() {
+    void testComparison() {
         Map<String, Object> map = new HashMap<>();
         Message messageOlder = new Message(1, map);
         Message messageNewer = new Message(2, map);
 
-        assertThat(messageNewer.getSequence(), is(greaterThan(messageOlder.getSequence())));
+        assertTrue(messageNewer.getSequence() > messageOlder.getSequence());
     }
 
     @Test
-    public void tesGenerateAnIdentityStreamWhenIdAndResourceArePresent() {
+    void tesGenerateAnIdentityStreamWhenIdAndResourceArePresent() {
         Map<String, Object> map = new HashMap<>();
         Map<String, String> beatsData = new HashMap<>();
 
@@ -54,7 +52,7 @@ public class MessageTest {
     }
 
     @Test
-    public void tesGenerateAnIdentityStreamWhenResourceIdIsAbsent() {
+    void tesGenerateAnIdentityStreamWhenResourceIdIsAbsent() {
         Map<String, Object> map = new HashMap<>();
         Map<String, String> beatsData = new HashMap<>();
 
@@ -70,7 +68,7 @@ public class MessageTest {
 
 
     @Test
-    public void tesGenerateAnIdentityStreamWhenIdIsAbsent() {
+    void tesGenerateAnIdentityStreamWhenIdIsAbsent() {
         Map<String, Object> map = new HashMap<>();
         Map<String, String> beatsData = new HashMap<>();
 
@@ -85,7 +83,7 @@ public class MessageTest {
     }
 
     @Test
-    public void tesGenerateAnIdentityStreamWhenIdAndResourceIdAreAbsent() {
+    void tesGenerateAnIdentityStreamWhenIdAndResourceIdAreAbsent() {
         Map<String, Object> map = new HashMap<>();
 
         Message message = new Message(1, map);

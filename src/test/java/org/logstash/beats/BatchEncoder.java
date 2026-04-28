@@ -20,7 +20,7 @@ import java.util.Map;
  */
 public class BatchEncoder extends MessageToByteEncoder<Batch> {
 
-    private final static Logger logger = LogManager.getLogger(BatchEncoder.class);
+    private static final Logger logger = LogManager.getLogger(BatchEncoder.class);
 
     @Override
     protected void encode(ChannelHandlerContext ctx, Batch batch, ByteBuf out) throws Exception {
@@ -71,7 +71,7 @@ public class BatchEncoder extends MessageToByteEncoder<Batch> {
             byte[] key = ((String) e.getKey()).getBytes();
             byte[] value = ((String) e.getValue()).getBytes();
 
-            logger.debug("New entry: key: " + e.getKey() + ", value: " + e.getValue());
+            logger.debug("New entry: key: {}, value: {}", e::getKey, e::getValue);
 
             payload.writeInt(key.length);
             payload.writeBytes(key);

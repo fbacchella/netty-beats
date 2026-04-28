@@ -1,9 +1,5 @@
 package org.logstash.beats;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.number.IsCloseTo.closeTo;
-
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.concurrent.CompletionException;
@@ -27,12 +23,17 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
-public class ServerTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class ServerTest {
 
     private int randomPort;
     private EventLoopGroup group;
@@ -40,18 +41,18 @@ public class ServerTest {
     private final int threadCount = 10;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         randomPort = tryGetPort();
-        group = new NioEventLoopGroup();
+        group = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
     }
 
     @AfterEach
-    public void shutdown() {
+    void shutdown() {
         group.shutdownGracefully(100, 200, TimeUnit.MILLISECONDS);
     }
 
     @Test
-    public void testServerShouldTerminateConnectionWhenExceptionHappen() throws InterruptedException, ExecutionException {
+    void testServerShouldTerminateConnectionWhenExceptionHappen() throws InterruptedException, ExecutionException {
         int inactivityTime = 3; // in seconds
         int concurrentConnections = 10;
 
@@ -69,6 +70,7 @@ public class ServerTest {
 
         final AtomicBoolean otherCause = new AtomicBoolean(false);
         server.setMessageListener(new MessageListener() {
+            @Override
             public void onNewConnection(ChannelHandlerContext ctx) {
                 // Make sure connection is closed on exception too.
                 if (connected.incrementAndGet() == 1) {
@@ -105,8 +107,8 @@ public class ServerTest {
             for (int i = 0; i < concurrentConnections; i++) {
                 connectClient().addListener(cfl);
             }
-            assertThat(latch.await(10, TimeUnit.SECONDS), is(true));
-            assertThat(otherCause.get(), is(false));
+            assertTrue(latch.await(10, TimeUnit.SECONDS));
+            assertFalse(otherCause.get());
         } finally {
             server.stop();
             thread.join();
@@ -115,7 +117,7 @@ public class ServerTest {
 
     @Test
     @Timeout(10)
-    public void testOverSizedBatch() throws InterruptedException, ExecutionException {
+    void testOverSizedBatch() throws InterruptedException, ExecutionException {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicInteger lastGoodCount = new AtomicInteger();
         Server server = new Server()
@@ -148,8 +150,8 @@ public class ServerTest {
         try {
             ChannelFuture cf = connectClient();
             cf.addListener(incrementSender);
-            assertThat(latch.await(1, TimeUnit.SECONDS), is(true));
-            assertThat(lastGoodCount.get(), is(6));
+            assertTrue(latch.await(1, TimeUnit.SECONDS));
+            assertEquals(6, lastGoodCount.get());
         } finally {
             server.stop();
             thread.join();
@@ -173,7 +175,7 @@ public class ServerTest {
 
     @Test
     @Timeout(10)
-    public void testServerShouldTerminateConnectionIdleForTooLong() throws InterruptedException, ExecutionException {
+    void testServerShouldTerminateConnectionIdleForTooLong() throws InterruptedException, ExecutionException {
         int inactivityTime = 3; // in seconds
         int concurrentConnections = 10;
 
@@ -207,13 +209,13 @@ public class ServerTest {
             for (int i = 0; i < concurrentConnections; i++) {
                 connectClient();
             }
-            assertThat(latch.await(10, TimeUnit.SECONDS), is(true));
+            assertTrue(latch.await(10, TimeUnit.SECONDS));
 
             long ended = System.currentTimeMillis();
 
             long diff = ended - started;
-            assertThat(diff / 1000.0, is(closeTo(inactivityTime, .5)));
-            assertThat(exceptionClose.get(), is(false));
+            assertEquals(inactivityTime, diff / 1000.0, 0.5);
+            assertFalse(exceptionClose.get());
         } finally {
             server.stop();
             thread.join();
@@ -222,11 +224,11 @@ public class ServerTest {
 
     @Test
     @Timeout(10)
-    public void testServerShouldAcceptConcurrentConnection() throws InterruptedException, ExecutionException {
+    void testServerShouldAcceptConcurrentConnection() throws InterruptedException, ExecutionException {
         // Each connection is sending 1 batch.
-        int ConcurrentConnections = 5;
+        int concurrentConnections = 5;
 
-        CountDownLatch latch = new CountDownLatch(ConcurrentConnections);
+        CountDownLatch latch = new CountDownLatch(concurrentConnections);
         CountDownLatch startLatch = new CountDownLatch(1);
 
         Server server = new Server()
@@ -246,7 +248,7 @@ public class ServerTest {
         server.f.get();
 
         ChannelFutureListener opCompleted = f -> operationComplete(startLatch, f);
-        for (int i = 0; i < ConcurrentConnections; i++) {
+        for (int i = 0; i < concurrentConnections; i++) {
             new Thread(() -> connect(startLatch, opCompleted)).start();
         }
 
