@@ -60,9 +60,7 @@ public class ConnectionHandler extends ChannelDuplexHandler {
      */
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
-        IdleStateEvent e;
-        if (evt instanceof IdleStateEvent) {
-            e = (IdleStateEvent) evt;
+        if (evt instanceof IdleStateEvent e) {
             if (e.state() == IdleState.WRITER_IDLE) {
                 if (sendKeepAlive(ctx)) {
                     ChannelFuture f = ctx.writeAndFlush(new Ack(Protocol.VERSION_2, 0));
