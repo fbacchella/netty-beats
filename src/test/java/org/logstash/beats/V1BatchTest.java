@@ -1,19 +1,19 @@
 package org.logstash.beats;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.HashMap;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class V1BatchTest {
 
     private V1Batch batch;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         batch = new V1Batch();
     }

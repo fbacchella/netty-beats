@@ -13,9 +13,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.logstash.beats.BeatsParser.InvalidFrameProtocolException;
 
 import io.netty.bootstrap.Bootstrap;
@@ -38,13 +39,13 @@ public class ServerTest {
     private final String host = "0.0.0.0";
     private final int threadCount = 10;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         randomPort = tryGetPort();
         group = new NioEventLoopGroup();
     }
 
-    @After
+    @AfterEach
     public void shutdown() {
         group.shutdownGracefully(100, 200, TimeUnit.MILLISECONDS);
     }
@@ -112,7 +113,8 @@ public class ServerTest {
         }
     }
 
-    @Test(timeout=10000)
+    @Test
+    @Timeout(10)
     public void testOverSizedBatch() throws InterruptedException, ExecutionException {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicInteger lastGoodCount = new AtomicInteger();
@@ -169,7 +171,8 @@ public class ServerTest {
         }
     }
 
-    @Test(timeout=10000)
+    @Test
+    @Timeout(10)
     public void testServerShouldTerminateConnectionIdleForTooLong() throws InterruptedException, ExecutionException {
         int inactivityTime = 3; // in seconds
         int concurrentConnections = 10;
@@ -217,7 +220,8 @@ public class ServerTest {
         }
     }
 
-    @Test(timeout=10000)
+    @Test
+    @Timeout(10)
     public void testServerShouldAcceptConcurrentConnection() throws InterruptedException, ExecutionException {
         // Each connection is sending 1 batch.
         int ConcurrentConnections = 5;
