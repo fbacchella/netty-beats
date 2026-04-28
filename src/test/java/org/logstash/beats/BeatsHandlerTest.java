@@ -112,8 +112,8 @@ class BeatsHandlerTest {
         embeddedChannel.writeInbound(batch);
         assertEquals(messageCount, spyListener.getLastMessages().size());
         Ack ack = embeddedChannel.readOutbound();
-        assertEquals(Protocol.VERSION_1, ack.getProtocol());
-        assertEquals(startSequenceNumber + messageCount - 1, ack.getSequence());
+        assertEquals(Protocol.VERSION_1, ack.protocol());
+        assertEquals(startSequenceNumber + messageCount - 1, ack.sequence());
         embeddedChannel.close();
     }
 
@@ -123,8 +123,8 @@ class BeatsHandlerTest {
         embeddedChannel.writeInbound(new V2Batch());
         assertEquals(0, spyListener.getLastMessages().size());
         Ack ack = embeddedChannel.readOutbound();
-        assertEquals(Protocol.VERSION_2, ack.getProtocol());
-        assertEquals(0, ack.getSequence());
+        assertEquals(Protocol.VERSION_2, ack.protocol());
+        assertEquals(0, ack.sequence());
         embeddedChannel.close();
     }
 
