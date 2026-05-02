@@ -49,7 +49,6 @@ public class BeatsParser extends ByteToMessageDecoder {
 
     private final int maxPayloadSize;
     private final ObjectReader jsonReader;
-    private final Inflater inflater = new Inflater();
 
     /**
      * Create a beats parser with no maximum payload size check.
@@ -239,6 +238,7 @@ public class BeatsParser extends ByteToMessageDecoder {
         ByteBuffer buffer = in.nioBuffer();
         // Estimation of decompressed out. It's a json body, a good compression ratio can be expected
         ByteBuf expandedPayload = ctx.alloc().buffer(requiredBytes * 8, Math.max(requiredBytes * 8, maxPayloadSize));
+        Inflater inflater = new Inflater();
         try {
             inflater.setInput(buffer);
             // Temporary buffer for decompression
@@ -258,7 +258,6 @@ public class BeatsParser extends ByteToMessageDecoder {
             throw new IOException("Invalid compressed data", e);
         } finally {
             expandedPayload.release();
-            inflater.end();
         }
     }
 
