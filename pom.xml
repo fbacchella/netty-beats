@@ -9,10 +9,10 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <log4j.version>2.25.4</log4j.version>
+        <log4j.version>2.26.0</log4j.version>
         <surefire.version>3.5.5</surefire.version>
-        <jackson.version>2.21.2</jackson.version>
-        <junit.version>5.14.4</junit.version>
+        <jackson.version>2.21.3</jackson.version>
+        <junit.version>6.1.0</junit.version>
         <dependency.locations.enabled>false</dependency.locations.enabled>
         <!-- Indirection needed to keep optionnal jacoco settings and external argument lines-->
         <arg.line></arg.line>
@@ -30,7 +30,7 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-handler</artifactId>
-            <version>4.2.12.Final</version>
+            <version>4.2.13.Final</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
