@@ -21,7 +21,8 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.ServerChannel;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.ssl.SslContext;
@@ -36,7 +37,7 @@ public class Server {
     private String host;
     private int clientInactivityTimeoutSeconds;
     private int maxPayloadSize = BeatsInitializer.DEFAULT_MAX_PAYLOAD_SIZE;
-    private Supplier<EventLoopGroup> workGroupSupplier = NioEventLoopGroup::new;
+    private Supplier<EventLoopGroup> workGroupSupplier = () -> new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
     private EventLoopGroup workGroup;
     private Class<? extends ServerChannel> channelClass = NioServerSocketChannel.class;
     private ChannelFactory<? extends ServerChannel> channelFactory = null;
@@ -188,7 +189,6 @@ public class Server {
                 workGroup = null;
             }
             if (beatsInitializer != null) {
-                beatsInitializer.shutdownEventExecutor();
                 beatsInitializer = null;
             }
         } catch (InterruptedException e) {
