@@ -38,7 +38,6 @@ class ServerTest {
     private int randomPort;
     private EventLoopGroup group;
     private final String host = "0.0.0.0";
-    private final int threadCount = 10;
 
     @BeforeEach
     void setUp() {
@@ -64,7 +63,6 @@ class ServerTest {
                         .setHost(host)
                         .setPort(randomPort)
                         .setClientInactivityTimeout(inactivityTime)
-                        .setBeatsHeandlerThreadCount(threadCount)
                         .setShutdownDelay(100, TimeUnit.MILLISECONDS)
                         .setChannelClass(NioServerSocketChannel.class);
 
@@ -125,7 +123,6 @@ class ServerTest {
                         .setPort(randomPort)
                         .setMaxPayloadSize(100)
                         .setClientInactivityTimeout(1)
-                        .setBeatsHeandlerThreadCount(threadCount)
                         .setShutdownDelay(100, TimeUnit.MILLISECONDS)
                         .setChannelClass(NioServerSocketChannel.class);
 
@@ -185,8 +182,7 @@ class ServerTest {
                         .setHost(host)
                         .setPort(randomPort)
                         .setShutdownDelay(100, TimeUnit.MILLISECONDS)
-                        .setClientInactivityTimeout(inactivityTime)
-                        .setBeatsHeandlerThreadCount(threadCount);
+                        .setClientInactivityTimeout(inactivityTime);
         server.setMessageListener(new MessageListener() {
             @Override
             public void onConnectionClose(ChannelHandlerContext ctx) {
@@ -234,8 +230,7 @@ class ServerTest {
         Server server = new Server()
                         .setHost(host)
                         .setPort(randomPort)
-                        .setClientInactivityTimeout(30)
-                        .setBeatsHeandlerThreadCount(threadCount);
+                        .setClientInactivityTimeout(30);
 
         server.setMessageListener(new MessageListener() {
             @Override
