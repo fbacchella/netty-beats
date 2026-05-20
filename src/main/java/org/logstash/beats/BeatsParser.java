@@ -258,6 +258,7 @@ public class BeatsParser extends ByteToMessageDecoder {
             throw new IOException("Invalid compressed data", e);
         } finally {
             expandedPayload.release();
+            inflater.end();
         }
     }
 
