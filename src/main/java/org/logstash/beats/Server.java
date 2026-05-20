@@ -27,8 +27,6 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.netty.util.concurrent.DefaultEventExecutorGroup;
-import io.netty.util.concurrent.EventExecutorGroup;
 
 public class Server {
 
@@ -38,7 +36,6 @@ public class Server {
     private String host;
     private int clientInactivityTimeoutSeconds;
     private int maxPayloadSize = BeatsInitializer.DEFAULT_MAX_PAYLOAD_SIZE;
-    private int beatsHeandlerThreadCount = 1;
     private Supplier<EventLoopGroup> workGroupSupplier = NioEventLoopGroup::new;
     private EventLoopGroup workGroup;
     private Class<? extends ServerChannel> channelClass = NioServerSocketChannel.class;
@@ -77,8 +74,14 @@ public class Server {
         return this;
     }
 
+    /**
+     * Do nothing
+     * @param beatsHeandlerThreadCount ignored
+     * @return
+     * @deprecated
+     */
+    @Deprecated(since = "1.1.0")
     public Server setBeatsHeandlerThreadCount(int beatsHeandlerThreadCount) {
-        this.beatsHeandlerThreadCount = beatsHeandlerThreadCount;
         return this;
     }
 
@@ -146,7 +149,7 @@ public class Server {
 
             beatsInitializer = new BeatsInitializer(tlsContext,
                                                     messageListener, clientInactivityTimeoutSeconds,
-                                                    beatsHeandlerThreadCount, maxPayloadSize);
+                                                    maxPayloadSize);
 
             ServerBootstrap server = new ServerBootstrap();
             server.group(workGroup)
@@ -204,25 +207,20 @@ public class Server {
         private static final String CONNECTION_HANDLER = "connection-handler";
         private static final String BEATS_ACKER = "beats-acker";
 
-        private static final int DEFAULT_IDLESTATEHANDLER_THREAD = 4;
         private static final int IDLESTATE_WRITER_IDLE_TIME_SECONDS = 5;
         private static final int DEFAULT_MAX_PAYLOAD_SIZE = -1;
 
-        private final EventExecutorGroup idleExecutorGroup;
-        private final EventExecutorGroup beatsHandlerExecutorGroup;
         private final IMessageListener localMessageListener;
         private final int localClientInactivityTimeoutSeconds;
         private final SslContext localTlsContext;
         private final int maxPayloadSize;
 
-        BeatsInitializer(SslContext tlsContext, IMessageListener messageListener, int clientInactivityTimeoutSeconds, int beatsHandlerThread, int maxPayloadSize) {
+        BeatsInitializer(SslContext tlsContext, IMessageListener messageListener, int clientInactivityTimeoutSeconds, int maxPayloadSize) {
             // Keeps a local copy of Server settings, so they can't be modified once it starts listening
             this.localTlsContext = tlsContext;
             this.localMessageListener = messageListener;
             this.localClientInactivityTimeoutSeconds = clientInactivityTimeoutSeconds;
             this.maxPayloadSize = maxPayloadSize;
-            idleExecutorGroup = new DefaultEventExecutorGroup(DEFAULT_IDLESTATEHANDLER_THREAD);
-            beatsHandlerExecutorGroup = new DefaultEventExecutorGroup(beatsHandlerThread);
         }
 
         @Override
@@ -233,11 +231,12 @@ public class Server {
                 SslHandler sslHandler = localTlsContext.newHandler(socket.alloc());
                 pipeline.addLast(SSL_HANDLER, sslHandler);
             }
-            pipeline.addLast(idleExecutorGroup, IDLESTATE_HANDLER,
+            pipeline.addLast(IDLESTATE_HANDLER,
                              new IdleStateHandler(localClientInactivityTimeoutSeconds, IDLESTATE_WRITER_IDLE_TIME_SECONDS, localClientInactivityTimeoutSeconds));
             pipeline.addLast(BEATS_ACKER, new AckEncoder());
             pipeline.addLast(CONNECTION_HANDLER, new ConnectionHandler());
-            pipeline.addLast(beatsHandlerExecutorGroup, new BeatsParser(maxPayloadSize), new BeatsHandler(localMessageListener));
+            pipeline.addLast("beats-parser", new BeatsParser(maxPayloadSize));
+            pipeline.addLast("beats-handler", new BeatsHandler(localMessageListener));
         }
 
         @Override
@@ -250,14 +249,14 @@ public class Server {
             }
         }
 
+        /**
+         * Do nothing
+         * @return
+         * @deprecated
+         */
+        @Deprecated(since = "1.1.0")
         public void shutdownEventExecutor() {
-            try {
-                idleExecutorGroup.shutdownGracefully(shutdownDelay.toMillis(), shutdownDelay.toMillis() * 2, TimeUnit.MILLISECONDS).sync();
-                beatsHandlerExecutorGroup.shutdownGracefully(shutdownDelay.toMillis(), shutdownDelay.toMillis() * 2, TimeUnit.MILLISECONDS).sync();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new IllegalStateException(e);
-            }
+            // No executor groups to shut down
         }
     }
 
