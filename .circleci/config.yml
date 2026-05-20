@@ -123,10 +123,9 @@ jobs:
                 command: |
                     # If no symbolic name, it's a PR, will not run sonar
                     if [ -n "$(git symbolic-ref HEAD 2>/dev/null )" ] ; then
-                      SONAR="sonar:sonar -Dsonar.projectKey=fr.loghub:netty-beats"
                       echo "Doing sonar"
                       mkdir -p /tmp/$CIRCLE_JOB
-                      mvn -B $SONAR -Pskip -Darg.line="-Xmx2048m -Djava.io.tmpdir=/tmp/$CIRCLE_JOB" -s .circleci/settings.xml
+                      mvn -B sonar:sonar -Dsonar.projectKey=fr.loghub:netty-beats -Psonar,skip -Darg.line="-Xmx2048m -Djava.io.tmpdir=/tmp/$CIRCLE_JOB" -s .circleci/settings.xml
                     fi
                 environment:
                     MAVEN_OPTS: "-Xmx512m"
