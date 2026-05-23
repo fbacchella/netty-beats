@@ -13,7 +13,7 @@ The needs that lead to this protocol are:
 
 ## Behavior
 
-Sequence and ack behavior (including sliding window, etc) is similar to TCP,
+Sequence and ack behavior (including sliding window, etc.) is similar to TCP,
 but instead of bytes, messages are the base unit.
 
 A writer with a window size of 50 events can send up to 50 unacked events
@@ -25,7 +25,7 @@ this protocol aims to provide reliable, application-level, message transport.
 
 ## Encryption and Authentication
 
-Currently this is to be handled by TLS.
+Currently, this is to be handled by TLS.
 
 ## Wire Format
 
@@ -49,7 +49,7 @@ This entire protocol is built to be layered on top of TCP or TLS.
 * frame type value: ASCII 'D' aka byte value 0x44
 
 data is a map of string:string pairs. This is analogous to a Hash in Ruby, a
-JSON map, etc, but only strings are supported at this time.
+JSON map, etc., but only strings are supported at this time.
 
 Payload:
 
@@ -71,7 +71,7 @@ data is json encoded.
 
 Payload:
 * 32bit unsigned sequence number
-* 32bit payload length (length in bytes of embedded json document)
+* 32bit payload length (length in bytes of an embedded json document)
 * 'length' bytes of json payload
 
 Sequence number roll-over: If you receive a sequence number less than the
@@ -119,7 +119,7 @@ The compressed payload MUST contain full frames only, not partial frames.
 The uncompressed payload MUST be a valid frame stream by itself. As an example,
 you could have 3 data frames compressed into a single 'compressed' frame type:
 1D{k,v}{k,v}1D{k,v}{k,v}1D{k,v}{k,v} - when uncompressed, you should process
-the uncompressed payload as you would reading uncompressed frames from the
+the uncompressed payload as you would read uncompressed frames from the
 network.
 
 TODO(sissel): It's likely this model is suboptimal, instead choose to

@@ -2,12 +2,12 @@
 
 [![CircleCI](https://circleci.com/gh/fbacchella/netty-beats/tree/netty_only.svg?style=svg)](https://circleci.com/gh/fbacchella/netty-beats/tree/netty_only)
 
-This is a [netty](https://netty.io)'s handler for Elastic's (beats)[https://www.elastic.co/fr/products/beats]. It can only received message, not send them.
+This is a [netty](https://netty.io)'s handler for Elastic's (beats)[https://www.elastic.co/fr/products/beats]. It can only receive message, not send them.
 It's a fork from the [logstash's plugin](https://github.com/logstash-plugins/logstash-input-beats) that kept only the netty parts.
 
 It is fully free and fully open source. The license is Apache 2.0, meaning you are pretty much free to use it however you want in whatever way.
 
-It provid a simple org.logstash.beats.Server` that can handle creation of a listener for you. You can use it with:
+It provides a simple org.logstash.beats.Server` that can handle creation of a listener for you. You can use it with:
 
 ```
         IMessageListener Listener = ...;
@@ -35,7 +35,7 @@ It provid a simple org.logstash.beats.Server` that can handle creation of a list
         
 ```
 
-But it can also created and managed manually:
+But it can also create and managed manually:
 
 ```
 

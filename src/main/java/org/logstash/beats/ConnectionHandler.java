@@ -48,7 +48,7 @@ public class ConnectionHandler extends ChannelDuplexHandler {
      * <p>
      * If no response has been issued after the configured write idle timeout via {@link io.netty.handler.timeout.IdleStateHandler}, then start to issue a TCP keep alive.
      * This can happen when the pipeline is blocked. Pending (blocked) batches are in either in the EventLoop attempting to write to the queue, or may be in a taskPending queue
-     * waiting for the EventLoop to unblock. This keep alive holds open the TCP connection from the Beats client so that it will not timeout and retry which could result in duplicates.
+     * waiting for the EventLoop to unblock. This keep alive holds open the TCP connection from the Beats client so that it will not time out and retry, which could result in duplicates.
      * </p>
      * <p><strong>IdleState.ALL_IDLE</strong></p>
      * <p>

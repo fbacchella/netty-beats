@@ -229,7 +229,7 @@
                 <executions>
                     <execution>
                         <id>attach-javadocs</id>
-                        <!-- Attach javadocs compressed to a jar file. -->
+                        <!-- Attach Javadocs compressed to a jar file. -->
                         <goals>
                             <goal>jar</goal>
                         </goals>
